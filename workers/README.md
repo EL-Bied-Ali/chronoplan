@@ -30,6 +30,12 @@ wrangler secret put BILLING_API_TOKEN
 
 `BILLING_API_TOKEN` is used by the Streamlit app when it calls `/account`.
 
+Optional (recommended): set the worker environment:
+```
+wrangler secret put PADDLE_ENV
+```
+Use `production` in production; the worker requires `PADDLE_WEBHOOK_SECRET` when `PADDLE_ENV=production`.
+
 ## 4) Deploy
 ```
 wrangler deploy

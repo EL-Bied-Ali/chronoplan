@@ -50,10 +50,15 @@ python scripts/paddle_webhook_server.py
 
 Configure secrets (env vars or `.streamlit/secrets.toml`):
 ```
+PADDLE_ENV = "sandbox"  # or "production"
 PADDLE_WEBHOOK_SECRET = "your-webhook-secret"
 PADDLE_WEBHOOK_PORT = "8001"
 PADDLE_WEBHOOK_PATH = "/webhook/paddle"
 ```
+
+Notes:
+- If `PADDLE_ENV="production"`, the app expects `APP_URL` to be a public `https://...` URL (not localhost) and `PADDLE_WEBHOOK_SECRET` to be set.
+- The webhook server/worker will reject/stop in production if the webhook secret is missing.
 
 Then set the webhook URL in Paddle to:
 ```

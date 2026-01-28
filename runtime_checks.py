@@ -47,10 +47,30 @@ def validate_runtime_config(checkout_enabled: bool) -> dict[str, Any]:
     keys = ["BILLING_API_URL", "BILLING_API_TOKEN", "APP_URL"]
     if checkout_enabled:
         keys.append("PADDLE_CLIENT_TOKEN")
+
+    paddle_env = (_get_secret("PADDLE_ENV") or "sandbox").strip().lower()
+    if paddle_env == "production" and checkout_enabled:
+        keys.append("PADDLE_WEBHOOK_SECRET")
+
     for key in keys:
         if not _get_secret(key):
             missing.append(key)
             _log_once(f"missing:{key}", logging.WARNING, f"Missing runtime config key: {key}")
+
+    if paddle_env == "production":
+        app_url = _get_secret("APP_URL").strip()
+        if not app_url:
+            missing.append("APP_URL (required in production)")
+        else:
+            try:
+                from urllib.parse import urlparse
+
+                parsed = urlparse(app_url)
+                host = (parsed.hostname or "").lower()
+                if parsed.scheme != "https" or host in {"localhost", "127.0.0.1"}:
+                    missing.append("APP_URL (must be https and not localhost in production)")
+            except Exception:
+                missing.append("APP_URL (invalid URL)")
     return {"missing": missing}
 
 

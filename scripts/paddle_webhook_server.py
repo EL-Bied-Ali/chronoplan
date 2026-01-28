@@ -182,6 +182,11 @@ def main() -> None:
     parser.add_argument("--secret", default=os.environ.get("PADDLE_WEBHOOK_SECRET", ""))
     args = parser.parse_args()
 
+    paddle_env = (os.environ.get("PADDLE_ENV", "sandbox") or "sandbox").strip().lower()
+    if paddle_env == "production" and not (args.secret or "").strip():
+        print("ERROR: PADDLE_WEBHOOK_SECRET is required when PADDLE_ENV=production.", file=sys.stderr)
+        raise SystemExit(2)
+
     PaddleWebhookHandler.webhook_secret = args.secret
     PaddleWebhookHandler.webhook_path = args.path
     server = HTTPServer(("0.0.0.0", args.port), PaddleWebhookHandler)

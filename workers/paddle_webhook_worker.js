@@ -132,8 +132,12 @@ export default {
     if (path === "/webhook/paddle" && request.method === "POST") {
     const bodyBuffer = await request.arrayBuffer();
     const body = new TextDecoder().decode(bodyBuffer);
+    const envName = String(env.PADDLE_ENV || "sandbox").toLowerCase();
     const secret = env.PADDLE_WEBHOOK_SECRET || "";
     const signature = request.headers.get("Paddle-Signature") || "";
+    if (envName === "production" && !secret) {
+      return jsonResponse({ ok: false, error: "missing_webhook_secret" }, 500);
+    }
     if (secret) {
       const valid = await verifySignature(body, signature, secret);
       if (!valid) {

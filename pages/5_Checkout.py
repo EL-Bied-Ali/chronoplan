@@ -62,6 +62,28 @@ def _base_url() -> str:
     return "http://localhost:8501"
 
 
+def _require_paddle_production_ready(paddle_env: str) -> None:
+    if paddle_env != "production":
+        return
+    app_url = (_get_secret("APP_URL") or "").strip()
+    if not app_url:
+        st.error("Production checkout requires APP_URL (https). Set it in Streamlit secrets/env.")
+        st.stop()
+    try:
+        parsed = urlparse(app_url)
+    except ValueError:
+        st.error("APP_URL is not a valid URL. Set APP_URL to your public https URL.")
+        st.stop()
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme != "https" or host in {"localhost", "127.0.0.1"}:
+        st.error("APP_URL must be https and not localhost when PADDLE_ENV=production.")
+        st.stop()
+    webhook_secret = (_get_secret("PADDLE_WEBHOOK_SECRET") or "").strip()
+    if not webhook_secret:
+        st.error("PADDLE_WEBHOOK_SECRET is required when PADDLE_ENV=production.")
+        st.stop()
+
+
 def _paddle_checkout_widget_html(
     token: str,
     env: str,
@@ -647,6 +669,7 @@ st.markdown(
 
 client_token = _get_secret("PADDLE_CLIENT_TOKEN")
 paddle_env = (_get_secret("PADDLE_ENV") or "sandbox").lower()
+_require_paddle_production_ready(paddle_env)
 price_id = _get_secret("PADDLE_PRICE_EUR" if paddle_env == "production" else "PADDLE_PRICE_EUR_SANDBOX")
 if not price_id:
     price_id = _get_secret("PADDLE_PRICE_EUR")
