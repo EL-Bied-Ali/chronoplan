@@ -5,6 +5,7 @@ import streamlit as st
 from auth_google import _stash_referral_code, require_login
 from backup_r2 import lazy_daily_backup, guard_backup_on_data_loss, auto_restore_on_data_loss
 from runtime_checks import check_billing_db_integrity, validate_runtime_config
+from projects_page.styles import inject_base_css
 
 _icon_path = Path(__file__).resolve().parents[1] / "Chronoplan_ico.png"
 st.set_page_config(
@@ -12,6 +13,7 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "CP",
     layout="wide",
 )
+inject_base_css()
 
 st.markdown(
     "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",

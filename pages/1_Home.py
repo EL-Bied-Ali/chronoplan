@@ -1,7 +1,7 @@
 from pathlib import Path
 import streamlit as st
 from auth_google import _render_home_screen, _stash_referral_code, require_login
-from projects_page.styles import inject_global_css
+from projects_page.styles import inject_base_css
 
 _icon_path = Path(__file__).resolve().parents[1] / "Chronoplan_ico.png"
 st.set_page_config(
@@ -9,7 +9,7 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "CP",
     layout="wide",
 )
-inject_global_css()
+inject_base_css()
 
 st.session_state["_current_page"] = "Home"
 

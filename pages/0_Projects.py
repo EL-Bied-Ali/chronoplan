@@ -13,7 +13,7 @@ from auth_google import (
 from billing_store import delete_account_by_email
 from projects_page.page import render_projects_page
 from projects_page.routing import get_query_params, query_value
-from projects_page.styles import inject_global_css
+from projects_page.styles import inject_base_css, inject_projects_css
 
 
 _icon_path = Path(__file__).resolve().parents[1] / "Chronoplan_ico.png"
@@ -22,7 +22,8 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "CP",
     layout="wide",
 )
-inject_global_css()
+inject_base_css()
+inject_projects_css()
 
 
 def _get_query_params() -> dict:

@@ -7,6 +7,7 @@ import streamlit as st
 from pathlib import Path
 
 from auth_google import require_login
+from projects_page.styles import inject_base_css
 from billing_store import (
     delete_account_by_email,
     get_account_by_email_local,
@@ -24,6 +25,7 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "CP",
     layout="wide",
 )
+inject_base_css()
 st.markdown(
     "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",
     unsafe_allow_html=True,

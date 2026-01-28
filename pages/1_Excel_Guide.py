@@ -5,6 +5,7 @@ import streamlit as st
 from auth_google import require_login, render_auth_sidebar, render_contact_sidebar
 from demo_template import demo_template_bytes, get_demo_template_debug
 from ui import inject_theme
+from projects_page.styles import inject_base_css
 
 
 _icon_path = Path(__file__).resolve().parents[1] / "Chronoplan_ico.png"
@@ -13,6 +14,7 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "🧭",
     layout="wide",
 )
+inject_base_css()
 st.markdown(
     "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",
     unsafe_allow_html=True,

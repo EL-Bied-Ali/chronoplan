@@ -13,6 +13,7 @@ import streamlit.components.v1 as components
 
 from auth_google import _get_logo_data_uri, require_login
 from billing_store import access_status, get_account_by_email
+from projects_page.styles import inject_base_css
 
 _icon_path = Path(__file__).resolve().parents[1] / "Chronoplan_ico.png"
 st.set_page_config(
@@ -20,6 +21,7 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "CP",
     layout="wide",
 )
+inject_base_css()
 
 
 def _get_secret(key: str) -> str:

@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from auth_google import require_login, render_auth_sidebar, render_contact_sidebar
+from projects_page.styles import inject_base_css
 from activity_filters import build_activity_filter_sidebar, ROOT_ACTIVITY_ALL
 from shared_excel import (
     set_default_excel_if_missing,
@@ -52,6 +53,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+inject_base_css()
 st.markdown(
     "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",
     unsafe_allow_html=True,

@@ -6,7 +6,7 @@ from typing import Any
 
 import streamlit as st
 
-GLOBAL_CSS = """
+BASE_CSS = """
 <style id="chronoplan-global-css">
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
@@ -36,12 +36,13 @@ body::before{
     radial-gradient(700px 260px at 80% 0%, rgba(180,124,255,.35), transparent 60%),
     radial-gradient(600px 400px at 50% 40%, rgba(109,213,237,.08), transparent 70%),
     var(--bg);
-  z-index: 0;
+  z-index: -1;
 }
+</style>
+"""
 
-/* Keep Streamlit content above background */
-.stApp > header, .stApp > div { position: relative; z-index: 1; }
-[data-testid="stHeader"] { background: transparent; }
+PROJECTS_CSS = """
+<style id="chronoplan-projects-css">
 [data-testid="stSidebarNav"] { display: none !important; }
 
 .block-container{
@@ -814,10 +815,16 @@ def should_disable_css() -> bool:
     return env_value in {"1", "true", "yes", "on"}
 
 
-def inject_global_css() -> None:
+def inject_base_css() -> None:
     if should_disable_css():
         return
-    st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+    st.markdown(BASE_CSS, unsafe_allow_html=True)
+
+
+def inject_projects_css() -> None:
+    if should_disable_css():
+        return
+    st.markdown(PROJECTS_CSS, unsafe_allow_html=True)
 
 
 def clean_html_block(markup: str) -> str:

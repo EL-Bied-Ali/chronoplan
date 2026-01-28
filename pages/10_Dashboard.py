@@ -23,7 +23,7 @@ from wbs_app.extract_wbs_json_calamine import (
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_plotly_events import plotly_events
-from projects_page.styles import inject_global_css
+from projects_page.styles import inject_base_css
 
 from auth_google import (
     render_auth_sidebar,
@@ -56,6 +56,18 @@ from projects import (
 )
 
 WEEKLY_PROGRESS_CACHE_VERSION = 2
+SHOW_BILLING_BANNER_DEBUG = os.getenv("SHOW_BILLING_BANNER_DEBUG", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+PLOTLY_EXPORT_CONFIG = {
+    "displayModeBar": True,
+    "displaylogo": False,
+    "toImageButtonOptions": {"format": "png", "scale": 2},
+}
+SCURVE_DEBUG = os.getenv("SCURVE_DEBUG", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 page_override = st.session_state.get("_page_override")
@@ -71,7 +83,7 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "🧭",
     layout="wide",
 )
-inject_global_css()
+inject_base_css()
 st.markdown(
     "<style>[data-testid='stSidebarNav']{display:none !important;}</style>",
     unsafe_allow_html=True,
@@ -229,9 +241,13 @@ if plan_status == "trialing" and days_left is not None and days_left <= 3:
     st.warning(f"Trial ends in {days_left} day(s). Start a subscription to keep dashboards unlocked.")
     st.page_link("pages/4_Billing.py", label="Go to Billing")
 elif plan_status == "active":
-    renew_label = plan_end.strftime("%b %d, %Y") if plan_end else "Monthly"
-    st.caption(f"Premium active • Renews on {renew_label} • Synced at {plan_updated_at or 'unknown'}")
-    st.page_link("pages/4_Billing.py", label="Manage subscription")
+    if SHOW_BILLING_BANNER_DEBUG:
+        renew_label = plan_end.strftime("%b %d, %Y") if plan_end else "Monthly"
+        with st.sidebar:
+            st.caption(
+                f"Premium active • Renews on {renew_label} • Synced at {plan_updated_at or 'unknown'}"
+            )
+            st.page_link("pages/4_Billing.py", label="Manage subscription")
 
 with st.sidebar:
     with st.container(key="back_to_projects_link"):
@@ -1759,7 +1775,7 @@ def render_dashboard():
         st.plotly_chart(
             weekly_progress_fig(local_weekly_progress, local_current_week),
             width="stretch",
-            config={"displayModeBar": False, "responsive": False},
+            config=PLOTLY_EXPORT_CONFIG,
         )
         render_weekly_warnings(local_weekly_info)
 
@@ -1773,7 +1789,7 @@ def render_dashboard():
             st.plotly_chart(
                 weekly_sv_fig(local_weekly_progress, local_current_week),
                 width="stretch",
-                config={"displayModeBar": False, "responsive": False},
+                config=PLOTLY_EXPORT_CONFIG,
             )
 
     with bottom[1]:
@@ -1785,7 +1801,7 @@ def render_dashboard():
             st.plotly_chart(
                 activities_status_fig(local_status_values, error_msg=local_status_error),
                 width="stretch",
-                config={"displayModeBar": False, "responsive": False},
+                config=PLOTLY_EXPORT_CONFIG,
             )
             if local_status_warnings:
                 st.warning(
@@ -2079,7 +2095,22 @@ def render_s_curve_page():
             actual_hover = None
             planned_hover = None
 
-        clicked_x = st.session_state.get("scurve_clicked_x")
+        if "pins" not in st.session_state or not isinstance(st.session_state.get("pins"), set):
+            raw_pins = st.session_state.get("pins")
+            pins: set[str] = set()
+            if isinstance(raw_pins, (list, tuple, set)):
+                pins = {str(v)[:10] for v in raw_pins if v}
+            st.session_state["pins"] = pins
+
+        pins: set[str] = st.session_state["pins"]
+        active_pin = st.session_state.get("scurve_active_pin")
+        if isinstance(active_pin, str):
+            active_pin = active_pin[:10]
+        else:
+            active_pin = None
+        if active_pin and active_pin not in pins:
+            active_pin = None
+            st.session_state.pop("scurve_active_pin", None)
 
         fig = s_curve(
             x,
@@ -2096,11 +2127,49 @@ def render_s_curve_page():
             weekly_actual_hover=weekly_actual_hover,
             weekly_forecast_hover=weekly_forecast_hover,
             current_week=current_week_date,
-            selected_x=clicked_x,
+            selected_x=active_pin,
         )
-        fig.update_layout(title_text="")
+        if pins:
+            for pin in sorted(pins):
+                is_active = bool(active_pin and pin == active_pin)
+                fig.add_vline(
+                    x=pin,
+                    line_width=2 if is_active else 2,
+                    line_dash="solid",
+                    line_color="rgba(233,199,95,0.65)",
+                )
+        # Use click events without Plotly's selection mode to avoid dimming/fading
+        # other traces (the "weekly" background) after a click.
+        fig.update_layout(title_text="", clickmode="event")
 
         st.markdown('<div class="scurve-hero-chart-title">▸ Progress Curve</div>', unsafe_allow_html=True)
+
+        if SCURVE_DEBUG:
+            with st.sidebar.expander("S-curve click debug", expanded=False):
+                st.caption("Shows raw plotly_events payload + which trace was clicked.")
+
+        if "scurve_debug_log" not in st.session_state or not isinstance(st.session_state["scurve_debug_log"], list):
+            st.session_state["scurve_debug_log"] = []
+
+        trace_map: dict[int, str] = {}
+        for i, tr in enumerate(fig.data):
+            name = getattr(tr, "name", None) or f"trace_{i}"
+            trace_map[i] = str(name)
+
+        if SCURVE_DEBUG:
+            with st.sidebar.expander("S-curve traces", expanded=False):
+                st.json(trace_map)
+
+        # Reset anti-replay state when the S-curve context changes (project / selected WBS).
+        scurve_ctx = (
+            f"{st.session_state.get('active_project_id', '')}"
+            f"|{st.session_state.get('active_activity_key', '')}"
+        )
+        if st.session_state.get("_scurve_last_ctx") != scurve_ctx:
+            st.session_state["_scurve_last_ctx"] = scurve_ctx
+            st.session_state["pins"] = set()
+            st.session_state.pop("scurve_active_pin", None)
+
         events = plotly_events(
             fig,
             click_event=True,
@@ -2109,20 +2178,68 @@ def render_s_curve_page():
             override_height=520,
             key="scurve_plot_events",
         )
+
         if events:
-            ev_x = events[0].get("x")
+            ev = events[0] or {}
+            ev_curve = ev.get("curveNumber")
+            ev_point = ev.get("pointNumber")
+            ev_x = ev.get("x")
+            ev_y = ev.get("y")
+
+            clicked_trace = (
+                trace_map.get(ev_curve, "unknown") if isinstance(ev_curve, int) else "unknown"
+            )
+            pins_count = (
+                len(st.session_state.get("pins", set()))
+                if isinstance(st.session_state.get("pins"), set)
+                else None
+            )
+            entry = {
+                "t": round(time.time(), 3),
+                "x": ev_x,
+                "y": ev_y,
+                "curveNumber": ev_curve,
+                "pointNumber": ev_point,
+                "trace": clicked_trace,
+                "pins_count": pins_count,
+                "raw": ev,
+            }
+            st.session_state["scurve_debug_log"].append(entry)
+            st.session_state["scurve_debug_log"] = st.session_state["scurve_debug_log"][-30:]
+
+            if SCURVE_DEBUG:
+                with st.sidebar.expander("S-curve click log (last 30)", expanded=True):
+                    st.json(st.session_state["scurve_debug_log"])
+
+            ev_x = ev.get("x")
             if ev_x is not None:
                 new_x = ev_x[:10] if isinstance(ev_x, str) else str(ev_x)[:10]
-                old_x = st.session_state.get("scurve_clicked_x")
-                now = time.time()
-                last = st.session_state.get("_scurve_click_ts", 0.0)
-                if now - last >= 0.35:
-                    st.session_state["_scurve_click_ts"] = now
-                    # Toggle pin: clicking the same x again clears the pin.
-                    if new_x == old_x:
-                        st.session_state.pop("scurve_clicked_x", None)
+
+                sig = f"x={new_x}|c={ev.get('curveNumber')}|p={ev.get('pointNumber')}"
+                now_ts = time.time()
+                last_sig = st.session_state.get("_scurve_last_sig")
+                last_ts = st.session_state.get("_scurve_last_sig_ts", 0.0)
+
+                # Treat "same sig again very quickly" as replay noise after st.rerun().
+                if sig == last_sig and (now_ts - float(last_ts)) < 0.35:
+                    pass
+                else:
+                    st.session_state["_scurve_last_sig"] = sig
+                    st.session_state["_scurve_last_sig_ts"] = now_ts
+
+                    pins = st.session_state.get("pins")
+                    if not isinstance(pins, set):
+                        pins = set()
+
+                    # Single-pin UX: clicking a new x moves the pin; clicking the same x toggles it off.
+                    if new_x in pins:
+                        pins = set()
+                        st.session_state.pop("scurve_active_pin", None)
                     else:
-                        st.session_state["scurve_clicked_x"] = new_x
+                        pins = {new_x}
+                        st.session_state["scurve_active_pin"] = new_x
+
+                    st.session_state["pins"] = pins
                     st.rerun()
         st.markdown(
             '<div class="scurve-hero-note">Planned, actual, and forecast are all % of Budgeted Units. Actual uses Cum Actual Units; forecast uses Cum Remaining Early Units when available.</div>',

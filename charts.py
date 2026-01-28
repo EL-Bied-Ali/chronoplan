@@ -36,6 +36,7 @@ def s_curve(
         return datetime.fromisoformat(str(v))
 
     x_dt = [_as_dt(v) for v in x]
+    n_x = len(x_dt)
 
     # -------------------------
     # Helpers
@@ -338,6 +339,10 @@ def s_curve(
         if idx is not None and idx < len(planned_curve):
             v = planned_curve[idx]
             if _is_num(v):
+                ax_cur = -42
+                if idx <= 1:
+                    ax_cur = 42
+                ay_cur = -46 if float(v) < 92.0 else 46
                 add_premium_callout(
                     fig,
                     x=x_dt[idx],
@@ -346,8 +351,8 @@ def s_curve(
                     color="#4b6ff4",
                     style="glass",
                     symbol="● ",
-                    ax=-42,
-                    ay=-46,
+                    ax=ax_cur,
+                    ay=ay_cur,
                 )
 
     if actual_curve and forecast_curve:
@@ -369,9 +374,11 @@ def s_curve(
     if selected_x is not None:
         idx2 = _find_index(x, selected_x)
         if idx2 is not None:
+            ax_sel = -42 if (n_x and idx2 >= n_x - 2) else 42
             if idx2 < len(planned_curve):
                 pv = planned_curve[idx2]
                 if _is_num(pv):
+                    ay_sel = -46 if float(pv) < 92.0 else 46
                     add_premium_callout(
                         fig,
                         x=x_dt[idx2],
@@ -380,8 +387,8 @@ def s_curve(
                         color="#4b6ff4",
                         style="glass",
                         symbol="● ",
-                        ax=42,
-                        ay=-46,
+                        ax=ax_sel,
+                        ay=ay_sel,
                     )
             av = actual_curve[idx2] if idx2 < len(actual_curve) else None
             ay_val = 46
@@ -402,6 +409,8 @@ def s_curve(
                             break
 
             if _is_num(av):
+                if float(av) < 8.0:
+                    ay_val = -46
                 add_premium_callout(
                     fig,
                     x=x_dt[idx2],
@@ -410,7 +419,7 @@ def s_curve(
                     color=col,
                     style="pill",
                     symbol=sym,
-                    ax=42,
+                    ax=ax_sel,
                     ay=ay_val,
                 )
 
@@ -425,13 +434,21 @@ def s_curve(
         bargroupgap=0.08,
         hovermode="x unified",
         uirevision="s_curve_v1",
-        margin=dict(l=64, r=40, t=10, b=34),
+        # Extra top margin so the legend never overlaps the curves near 100%.
+        margin=dict(l=64, r=72, t=76, b=52),
         paper_bgcolor="#0e1328",
         plot_bgcolor="#0e1328",
         font=dict(color="#e8eefc", size=13),
-        legend=dict(orientation="h", y=1.05, x=0),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.12,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(0,0,0,0)",
+        ),
         title=dict(
-            text="Project Progress (S-Curve)",
+            text="",
             x=0,
             font=dict(size=14, color="#cfd6ff"),
         ),

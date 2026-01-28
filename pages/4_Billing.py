@@ -11,7 +11,7 @@ from pathlib import Path
 
 import streamlit as st
 import streamlit.components.v1 as components
-from projects_page.styles import inject_global_css
+from projects_page.styles import inject_base_css
 
 from auth_google import _get_logo_data_uri, require_login
 from billing_store import (
@@ -31,7 +31,7 @@ st.set_page_config(
     page_icon=str(_icon_path) if _icon_path.exists() else "CP",
     layout="wide",
 )
-inject_global_css()
+inject_base_css()
 
 
 def _get_secret(key: str) -> str:
