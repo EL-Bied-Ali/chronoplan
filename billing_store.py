@@ -116,6 +116,19 @@ def _get_secret(key: str) -> str:
     return value
 
 
+def _remote_headers(token: str | None = None) -> dict[str, str]:
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        # Some Cloudflare configurations block non-browser user agents (causing
+        # a 403 "Access denied" HTML page). Use a browser-like UA so calls from
+        # Streamlit backends (urllib) are less likely to be flagged.
+        "User-Agent": "Mozilla/5.0 (compatible; ChronoPlan/1.0; +https://chronoplan.streamlit.app)",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 def _parse_iso(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -331,9 +344,7 @@ def _fetch_remote_account(email: str) -> dict[str, Any] | None:
         return None
     token = _get_secret("BILLING_API_TOKEN")
     url = f"{base_url.rstrip('/')}/account?{urlencode({'email': email})}"
-    headers = {"Accept": "application/json"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    headers = _remote_headers(token or None)
     try:
         req = Request(url, headers=headers, method="GET")
         with urlopen(req, timeout=6) as response:
@@ -393,9 +404,7 @@ def fetch_remote_transactions(
     if limit:
         params["limit"] = str(limit)
     url = f"{base_url.rstrip('/')}/transactions?{urlencode(params)}"
-    headers = {"Accept": "application/json"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    headers = _remote_headers(token or None)
     try:
         req = Request(url, headers=headers, method="GET")
         with urlopen(req, timeout=8) as response:
@@ -568,12 +577,8 @@ def create_portal_session(
     if return_url:
         payload["return_url"] = return_url
     url = f"{base_url.rstrip('/')}/portal"
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    headers = _remote_headers(token or None)
+    headers["Content-Type"] = "application/json"
     try:
         req = Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
         with urlopen(req, timeout=8) as response:
