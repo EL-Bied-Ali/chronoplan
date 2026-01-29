@@ -2138,3 +2138,13 @@ with col_right:
         "</div>"
     )
     st.markdown(history_html, unsafe_allow_html=True)
+
+st.divider()
+st.caption("Legal")
+col_terms, col_privacy, col_refunds = st.columns(3)
+with col_terms:
+    st.page_link("pages/90_Terms.py", label="Terms")
+with col_privacy:
+    st.page_link("pages/91_Privacy.py", label="Privacy")
+with col_refunds:
+    st.page_link("pages/92_Refunds.py", label="Refunds")
