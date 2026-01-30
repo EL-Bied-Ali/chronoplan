@@ -238,8 +238,47 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     except sqlite3.IntegrityError as err:
         _log(
             logging.WARNING,
-            "ensure_schema unique index failed (possible duplicate referee_email):" f" {err}",
+            f"ensure_schema unique index failed (possible duplicate referee_email): {err}",
         )
+
+        def _dedupe_referrals_for_unique_index(c: sqlite3.Connection) -> int:
+            c.execute(
+                "UPDATE referrals SET referee_email = lower(trim(referee_email)) WHERE referee_email IS NOT NULL"
+            )
+            c.execute("DELETE FROM referrals WHERE referee_email IS NULL OR trim(referee_email) = ''")
+
+            before = c.execute("SELECT COUNT(*) AS n FROM referrals").fetchone()["n"]
+            c.execute(
+                """
+                WITH keep AS (
+                  SELECT
+                    referrer_account_id,
+                    referee_email,
+                    COALESCE(
+                      MAX(CASE WHEN activated_at IS NOT NULL THEN id END),
+                      MAX(id)
+                    ) AS keep_id
+                  FROM referrals
+                  GROUP BY referrer_account_id, referee_email
+                )
+                DELETE FROM referrals
+                WHERE id NOT IN (SELECT keep_id FROM keep);
+                """
+            )
+            after = c.execute("SELECT COUNT(*) AS n FROM referrals").fetchone()["n"]
+            return int(before) - int(after)
+
+        deleted = _dedupe_referrals_for_unique_index(conn)
+        _log(logging.WARNING, f"ensure_schema dedupe_referrals removed={deleted} now retrying unique index")
+        try:
+            conn.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_referrals_referrer_referee_email
+                ON referrals(referrer_account_id, referee_email)
+                """
+            )
+        except sqlite3.IntegrityError as err2:
+            _log(logging.WARNING, f"ensure_schema unique index still failing after dedupe: {err2}")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS subscriptions (
@@ -386,10 +425,12 @@ def _fetch_remote_account(email: str) -> dict[str, Any] | None:
 def fetch_remote_transactions(
     email: str,
     account_id: int | None = None,
+    subscription_id: str | None = None,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
     email = (email or "").strip().lower()
     account_id_value = str(account_id) if account_id else ""
+    subscription_id = (subscription_id or "").strip() or None
     base_url = _get_secret("BILLING_API_URL")
     if not base_url:
         return []
@@ -401,6 +442,8 @@ def fetch_remote_transactions(
         params["email"] = email
     elif account_id_value:
         params["account_id"] = account_id_value
+    if subscription_id:
+        params["subscription_id"] = subscription_id
     if limit:
         params["limit"] = str(limit)
     url = f"{base_url.rstrip('/')}/transactions?{urlencode(params)}"
@@ -445,6 +488,123 @@ def fetch_remote_transactions(
     return [tx for tx in transactions if isinstance(tx, dict)]
 
 
+def _as_int_amount(value: Any) -> int | None:
+    # Paddle often returns amounts as strings like "2000"
+    try:
+        if value is None:
+            return None
+        return int(str(value).strip())
+    except Exception:
+        return None
+
+
+def _is_grantable_monthly_invoice_tx(
+    tx: dict[str, Any],
+    *,
+    expected_account_id: str,
+    local_sub_uid: str,
+) -> tuple[bool, str]:
+    """
+    True only for *paid monthly subscription invoices* (1 month).
+    Returns (ok, reason) where reason helps debug.
+    """
+    status = (tx.get("status") or tx.get("state") or "").strip().lower()
+    if status not in {"completed", "paid", "succeeded", "success"}:
+        return False, f"bad_status:{status or '<empty>'}"
+
+    invoice_id = (tx.get("invoice_id") or tx.get("id") or "").strip()
+    if not invoice_id:
+        return False, "missing_invoice_id"
+
+    sub_id = (tx.get("subscription_id") or "").strip()
+    if not sub_id:
+        return False, "missing_subscription_id"
+
+    if local_sub_uid and sub_id != local_sub_uid:
+        return False, "subscription_mismatch"
+
+    custom_data = tx.get("custom_data") or {}
+    tx_account_id = str(custom_data.get("account_id") or "").strip()
+    if tx_account_id and tx_account_id != expected_account_id:
+        return False, "account_id_mismatch"
+
+    billed_at = (tx.get("billed_at") or "").strip()
+    if not billed_at:
+        return False, "missing_billed_at"
+
+    billing_period = tx.get("billing_period") or {}
+    if not isinstance(billing_period, dict):
+        return False, "bad_billing_period"
+    starts_at = (billing_period.get("starts_at") or "").strip()
+    ends_at = (billing_period.get("ends_at") or billing_period.get("end_at") or "").strip()
+    if not starts_at or not ends_at:
+        return False, "missing_billing_period_bounds"
+
+    items = tx.get("items") or []
+    if not isinstance(items, list) or not items:
+        return False, "missing_items"
+
+    is_monthly = False
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        price = it.get("price") or {}
+        if not isinstance(price, dict):
+            continue
+        bc = price.get("billing_cycle") or {}
+        if not isinstance(bc, dict):
+            continue
+        interval = (bc.get("interval") or "").strip().lower()
+        freq = bc.get("frequency")
+        if interval == "month" and str(freq).strip() == "1":
+            is_monthly = True
+            break
+    if not is_monthly:
+        return False, "not_monthly_billing_cycle"
+
+    details = tx.get("details") or {}
+    totals = details.get("totals") if isinstance(details, dict) else None
+    grand_total = None
+    if isinstance(totals, dict):
+        grand_total = _as_int_amount(totals.get("grand_total") or totals.get("total"))
+    if grand_total is None:
+        first = items[0] if isinstance(items[0], dict) else {}
+        q = _as_int_amount(first.get("quantity"))
+        price = first.get("price") if isinstance(first.get("price"), dict) else {}
+        unit_price = price.get("unit_price") if isinstance(price.get("unit_price"), dict) else {}
+        amt = _as_int_amount(unit_price.get("amount"))
+        if q is not None and amt is not None:
+            grand_total = q * amt
+    if grand_total is None or grand_total <= 0:
+        return False, f"non_positive_total:{grand_total}"
+
+    return True, "ok"
+
+
+def _store_tx_sample_once(account_id: int, tx: dict[str, Any]) -> None:
+    """
+    Store up to 3 tx samples per account for debugging month-grant filters.
+    """
+    if not account_id or not isinstance(tx, dict):
+        return
+    init_db()
+    with _conn() as conn:
+        existing = conn.execute(
+            """
+            SELECT COUNT(*) AS n
+            FROM events
+            WHERE account_id = ?
+              AND event_type = 'tx_sample'
+            """,
+            (account_id,),
+        ).fetchone()
+        count = int(existing["n"] or 0) if existing else 0
+        if count >= 3:
+            return
+    trimmed = tx
+    record_event(account_id, "tx_sample", {"tx": trimmed})
+
+
 def apply_months_from_remote_transactions(
     email: str,
     account_id: int,
@@ -461,10 +621,6 @@ def apply_months_from_remote_transactions(
     if not email or not account_id:
         return 0
 
-    txs = fetch_remote_transactions(email, account_id=account_id, limit=limit)
-    if not txs:
-        return 0
-
     init_db()
     with _conn() as conn:
         row = conn.execute(
@@ -473,6 +629,15 @@ def apply_months_from_remote_transactions(
         ).fetchone()
     local_sub_id = (row["paddle_subscription_uid"] or "").strip() if row else ""
     expected_account_id = str(account_id)
+
+    txs = fetch_remote_transactions(
+        email,
+        account_id=account_id,
+        subscription_id=local_sub_id or None,
+        limit=limit,
+    )
+    if not txs:
+        return 0
 
     if _debug_enabled():
         sample_tx: dict[str, Any] | None = None
@@ -490,6 +655,7 @@ def apply_months_from_remote_transactions(
                 "TX_SAMPLE=" + json.dumps(sample_tx, ensure_ascii=False)[:2000],
                 force=force,
             )
+            _store_tx_sample_once(account_id, sample_tx)
 
     granted = 0
     for tx in txs:
@@ -503,29 +669,18 @@ def apply_months_from_remote_transactions(
         if not tx_id_str:
             continue
 
-        status = (tx.get("status") or tx.get("state") or "").strip().lower()
-        if status not in {"completed", "paid", "succeeded", "success"}:
+        ok_tx, reason = _is_grantable_monthly_invoice_tx(
+            tx,
+            expected_account_id=expected_account_id,
+            local_sub_uid=local_sub_id,
+        )
+        if not ok_tx:
+            if _debug_enabled():
+                _log_info(f"skip_tx reason={reason} invoice={tx_id_str}", force=force)
             continue
 
-        tx_type = (tx.get("type") or tx.get("event_type") or tx.get("kind") or "").strip().lower()
-        custom_data = tx.get("custom_data") or {}
-        tx_account_id = str(custom_data.get("account_id") or "").strip()
-        if tx_account_id and tx_account_id != expected_account_id:
-            if _debug_enabled():
-                _log_info(
-                    f"skip_tx account_mismatch expected={expected_account_id} got={tx_account_id} invoice={tx_id_str}",
-                    force=force,
-                )
-            continue
-        tx_sub_id = (tx.get("subscription_id") or "").strip()
-        if local_sub_id and tx_sub_id and tx_sub_id != local_sub_id:
-            if _debug_enabled():
-                _log_info(
-                    f"skip_tx sub_mismatch local={local_sub_id} tx={tx_sub_id} invoice={tx_id_str}",
-                    force=force,
-                )
-            continue
-        if _debug_enabled() and tx_account_id == expected_account_id:
+        if _debug_enabled():
+            tx_sub_id = (tx.get("subscription_id") or "").strip()
             _log_info(
                 f"matching_tx subs local={local_sub_id or '<empty>'} tx={tx_sub_id or '<empty>'}",
                 force=force,
@@ -543,13 +698,16 @@ def apply_months_from_remote_transactions(
             record_event(
                 account_id,
                 "paddle_month_applied",
-                {"source": source, "tx_id": tx_id_str, "status": status, "tx_type": tx_type},
+                {"source": source, "tx_id": tx_id_str, "status": tx.get("status"), "reason": "ok"},
             )
             if _debug_enabled():
                 _log_info(
-                    f"paddle_month_applied source={source} status={status!r} tx_type={tx_type!r}",
+                    f"paddle_month_applied source={source}",
                     force=force,
                 )
+        else:
+            if _debug_enabled():
+                _log_info(f"skip_tx reason=already_applied invoice={tx_id_str}", force=force)
     if _debug_enabled() and granted == 0 and txs:
         sample = txs[0]
         _log_info(f"apply_months_from_remote_transactions no grant sample_keys={list(sample.keys())}", force=force)
@@ -625,11 +783,15 @@ def sync_account_from_remote(email: str, force: bool = False) -> bool:
     if not _remote_sync_allowed(email):
         _log_info(f"sync_account_from_remote skip_ttl email={email!r}", force=force)
         return False
-    _REMOTE_SYNC_CACHE[email] = time.time()
+
+    # Fetch remote first. Do NOT set TTL cache until we know the remote call succeeded.
     remote = _fetch_remote_account(email)
     if not remote:
         _log_info(f"sync_account_from_remote remote_missing email={email!r}", force=force)
         return False
+
+    # Only now record the TTL timestamp (prevents 60s lockout on transient failures).
+    _REMOTE_SYNC_CACHE[email] = time.time()
     local = _get_account_by_email_local(email)
     if not local:
         _log_info(f"sync_account_from_remote local_missing email={email!r} creating stub", force=force)
@@ -1196,17 +1358,17 @@ def activate_referral_reward(referee_account_id: int, *, reason: str = "first_pa
             referee_email = referee_email_row["email"]
             ref = conn.execute(
                 """
-                SELECT id, referrer_account_id, activated_at, reward_months
+                SELECT id, referrer_account_id, reward_months
                 FROM referrals
                 WHERE referee_email = ?
+                  AND activated_at IS NULL
+                ORDER BY created_at DESC, id DESC
                 LIMIT 1
                 """,
                 (referee_email,),
             ).fetchone()
             if not ref:
                 return False, 0, 0, 0
-            if ref["activated_at"]:
-                return False, int(ref["id"]), int(ref["referrer_account_id"]), int(ref["reward_months"] or 0)
 
             referral_id = int(ref["id"])
             referrer_id = int(ref["referrer_account_id"])
@@ -1546,16 +1708,23 @@ def delete_account_by_email(email: str) -> bool:
     if not email:
         return False
     init_db()
+
+    email_norm = email.strip().lower()
+
     def _do() -> bool:
         with _conn() as conn:
             conn.execute("BEGIN IMMEDIATE;")
             row = conn.execute(
-                "SELECT id FROM accounts WHERE email = ?",
-                (email,),
+                "SELECT id FROM accounts WHERE lower(email) = ?",
+                (email_norm,),
             ).fetchone()
             if not row:
                 return False
-            account_id = row["id"]
+            account_id = int(row["id"])
+
+            conn.execute("DELETE FROM referrals WHERE referrer_account_id = ?", (account_id,))
+            conn.execute("DELETE FROM referrals WHERE referee_account_id = ?", (account_id,))
+            conn.execute("DELETE FROM referrals WHERE lower(referee_email) = ?", (email_norm,))
             conn.execute(
                 "DELETE FROM subscriptions WHERE account_id = ?",
                 (account_id,),

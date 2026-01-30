@@ -32,6 +32,7 @@ export default {
       }
       const email = (url.searchParams.get("email") || "").trim().toLowerCase();
       const accountId = (url.searchParams.get("account_id") || "").trim();
+      const subscriptionId = (url.searchParams.get("subscription_id") || "").trim();
       if (!email && !accountId) {
         return jsonResponse({ ok: false, error: "missing_identifier" }, 400);
       }
@@ -52,7 +53,8 @@ export default {
       }
       const envName = String(env.PADDLE_ENV || "sandbox").toLowerCase();
       const base = envName === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
-      const query = new URLSearchParams({ customer_id: customerId, per_page: String(limit) });
+      const fetchPerPage = subscriptionId ? 100 : limit;
+      const query = new URLSearchParams({ customer_id: customerId, per_page: String(fetchPerPage) });
       const apiUrl = `${base}/transactions?${query.toString()}`;
       const apiResp = await fetch(apiUrl, {
         headers: {
@@ -65,8 +67,33 @@ export default {
         return jsonResponse({ ok: false, error: "paddle_api_error", detail: body }, apiResp.status);
       }
       const payload = await apiResp.json();
-      const transactions = Array.isArray(payload?.data) ? payload.data : [];
-      return jsonResponse({ ok: true, transactions });
+      let txs = Array.isArray(payload?.data) ? payload.data : [];
+      if (subscriptionId) {
+        const wanted = String(subscriptionId || "").trim();
+
+        txs = txs.filter((tx) => {
+          // Paddle can represent subscription id in different places depending on object shape
+          const candidates = [
+            tx?.subscription_id,
+            tx?.subscription?.id,
+            tx?.subscription, // sometimes already a string
+            tx?.items?.[0]?.subscription_id,
+            tx?.items?.[0]?.subscription?.id,
+          ];
+
+          for (const v of candidates) {
+            const sub = String(v || "").trim();
+            if (sub && sub === wanted) return true;
+          }
+          return false;
+        });
+
+        console.log("transactions filter subscription_id", subscriptionId, "returned", txs.length);
+      }
+      if (limit && txs.length > limit) {
+        txs = txs.slice(0, limit);
+      }
+      return jsonResponse({ ok: true, transactions: txs });
     }
 
     if (path === "/portal" && request.method === "POST") {

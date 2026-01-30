@@ -181,3 +181,104 @@ After a Paddle event (subscription.expired, subscription.cancelled, etc.):
 5. UI error handler catches and shows message
 
 No special handling needed - happens automatically on next mutation attempt.
+
+## Referral Activation (Deterministic)
+
+This verifies that `activate_referral_reward()` activates the *newest pending* referral (by `created_at DESC, id DESC`)
+when multiple referral rows exist for the same `referee_email`.
+
+Run:
+
+```bash
+python - <<'PY'
+import os, sqlite3
+from datetime import datetime, timedelta, timezone
+
+os.environ["BILLING_DB_PATH"] = "artifacts/billing.sqlite"
+os.environ["BILLING_DEBUG"] = "1"
+
+from billing_store import ensure_db_ready, _conn, _iso, _utc_now, activate_referral_reward
+
+ensure_db_ready()
+
+referee_email = "referee_test@example.com"
+ref1_email = "referrer1@example.com"
+ref2_email = "referrer2@example.com"
+
+with _conn() as conn:
+    conn.execute("BEGIN IMMEDIATE;")
+
+    # Clean any previous test rows
+    conn.execute("DELETE FROM referrals WHERE referee_email = ?", (referee_email,))
+    conn.execute("DELETE FROM accounts WHERE email IN (?, ?, ?)", (referee_email, ref1_email, ref2_email))
+
+    now = _utc_now()
+    older = _iso(now - timedelta(days=2))
+    newer = _iso(now - timedelta(days=1))
+
+    # Create accounts
+    conn.execute(
+        "INSERT INTO accounts (email, name, created_at, last_seen, plan_status, plan_updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (ref1_email, "Ref1", _iso(now), _iso(now), "trialing", _iso(now)),
+    )
+    conn.execute(
+        "INSERT INTO accounts (email, name, created_at, last_seen, plan_status, plan_updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (ref2_email, "Ref2", _iso(now), _iso(now), "trialing", _iso(now)),
+    )
+    conn.execute(
+        "INSERT INTO accounts (email, name, created_at, last_seen, plan_status, plan_updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (referee_email, "Referee", _iso(now), _iso(now), "trialing", _iso(now)),
+    )
+
+    ref1_id = conn.execute("SELECT id FROM accounts WHERE email=?", (ref1_email,)).fetchone()["id"]
+    ref2_id = conn.execute("SELECT id FROM accounts WHERE email=?", (ref2_email,)).fetchone()["id"]
+    referee_id = conn.execute("SELECT id FROM accounts WHERE email=?", (referee_email,)).fetchone()["id"]
+
+    # Insert TWO referrals for the same referee_email, different created_at
+    # Older referral:
+    conn.execute(
+        """
+        INSERT INTO referrals (referrer_account_id, referee_account_id, referral_code, created_at, activated_at, reward_months, referee_email)
+        VALUES (?, ?, ?, ?, NULL, 0, ?)
+        """,
+        (ref1_id, referee_id, "code_old", older, referee_email.lower()),
+    )
+    old_referral_row_id = conn.execute("SELECT last_insert_rowid() AS x").fetchone()["x"]
+
+    # Newer referral:
+    conn.execute(
+        """
+        INSERT INTO referrals (referrer_account_id, referee_account_id, referral_code, created_at, activated_at, reward_months, referee_email)
+        VALUES (?, ?, ?, ?, NULL, 0, ?)
+        """,
+        (ref2_id, referee_id, "code_new", newer, referee_email.lower()),
+    )
+    new_referral_row_id = conn.execute("SELECT last_insert_rowid() AS x").fetchone()["x"]
+
+    conn.commit()
+
+print("Referee account id:", referee_id)
+ok = activate_referral_reward(referee_id, reason="manual_test")
+print("activate_referral_reward returned:", ok)
+
+with _conn() as conn:
+    rows = conn.execute(
+        "SELECT id, referral_code, created_at, activated_at, reward_months, referrer_account_id FROM referrals WHERE referee_email=? ORDER BY created_at ASC",
+        (referee_email.lower(),),
+    ).fetchall()
+    for r in rows:
+        print(dict(r))
+
+    # Expectation: only the NEWEST referral (created_at newer) got activated_at set
+    activated = [dict(r) for r in rows if r["activated_at"]]
+    print("Activated count:", len(activated))
+    if activated:
+        print("Activated referral id:", activated[0]["id"], "expected:", new_referral_row_id)
+PY
+```
+
+Expected:
+
+- `activate_referral_reward returned: True`
+- `Activated count: 1`
+- Activated referral id equals `new_referral_row_id` (the newer referral)
