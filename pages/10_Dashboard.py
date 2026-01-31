@@ -1418,7 +1418,11 @@ def activities_status_fig(data: dict, error_msg: str | None = None, apply_layout
         uniformtext=None,
     )
     if apply_layout:
-        return base_layout(fig, height=260)
+        fig = base_layout(fig, height=240)
+        # Pie charts don't need the large right margin used by x/y charts; it shrinks the donut
+        # and can leave a visible empty band in narrow columns.
+        fig.update_layout(margin=dict(l=10, r=10, t=24, b=12))
+        return fig
     return fig
 
 
