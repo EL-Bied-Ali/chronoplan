@@ -106,10 +106,13 @@ def inject_theme():
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .chart-heading{
         position: relative;
         padding:12px 34px 4px 14px;
+        z-index: 2;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .stPlotlyChart{
         padding:0 12px 12px 12px;
         box-sizing:border-box;
+        position: relative;
+        z-index: 1;
       }
       /* Allow metric cards to size naturally (no inner scroll) */
       div[data-testid="stElementContainer"]:has(.card.metric){
@@ -272,6 +275,7 @@ def inject_theme():
         position: relative;
         padding-right: 24px;
         line-height: 1.15;
+        z-index: 2;
       }
       .metric .value{ color:var(--text); font-weight:800; font-size:28px; }
       .metric .value.positive{ color:var(--accent-2); }
@@ -1020,7 +1024,7 @@ def inject_theme():
         opacity: 0;
         transform: translateY(-4px);
         pointer-events: none;
-        z-index: 9999;
+        z-index: 2147483647;
       }
       .info-badge[data-tip]::before{
         content: "";
@@ -1035,7 +1039,7 @@ def inject_theme():
         transform: rotate(45deg);
         opacity: 0;
         pointer-events: none;
-        z-index: 9998;
+        z-index: 2147483646;
       }
       .info-badge[data-tip]:hover::after,
       .info-badge[data-tip]:focus::after,
@@ -1046,7 +1050,7 @@ def inject_theme():
       }
       .info-badge[data-tip]:hover,
       .info-badge[data-tip]:focus{
-        z-index: 9999;
+        z-index: 2147483647;
       }
       .gauge-help[data-tip]{
         position: relative;
@@ -1072,7 +1076,7 @@ def inject_theme():
         opacity: 0;
         transform: translateY(-4px);
         pointer-events: none;
-        z-index: 9999;
+        z-index: 2147483647;
       }
       .gauge-help[data-tip]::before{
         content: "";
@@ -1087,7 +1091,11 @@ def inject_theme():
         transform: rotate(45deg);
         opacity: 0;
         pointer-events: none;
-        z-index: 9998;
+        z-index: 2147483646;
+      }
+      .gauge-help[data-tip]:hover,
+      .gauge-help[data-tip]:focus{
+        z-index: 2147483647;
       }
       .gauge-help[data-tip]:hover::after,
       .gauge-help[data-tip]:focus::after,
