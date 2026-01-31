@@ -27,6 +27,20 @@ html, body { background: var(--bg); }
   font-family: "Space Grotesk", sans-serif;
 }
 
+/* Make Streamlit chrome transparent so the global background shows consistently. */
+[data-testid="stAppViewContainer"],
+section.main,
+.main{
+  background: transparent !important;
+}
+header,
+[data-testid="stHeader"],
+[data-testid="stToolbar"]{
+  background: transparent !important;
+}
+[data-testid="stDecoration"]{ display:none !important; }
+[data-testid="stSidebar"]{ background: transparent !important; }
+
 body::before{
   content:"";
   position: fixed;
