@@ -1418,10 +1418,15 @@ def activities_status_fig(data: dict, error_msg: str | None = None, apply_layout
         uniformtext=None,
     )
     if apply_layout:
-        fig = base_layout(fig, height=240)
-        # Pie charts don't need the large right margin used by x/y charts; it shrinks the donut
-        # and can leave a visible empty band in narrow columns.
-        fig.update_layout(margin=dict(l=10, r=10, t=24, b=12))
+        # Match the height of the adjacent "Schedule Gap" chart to avoid an empty band caused by the
+        # Streamlit columns stretching to the tallest chart in the row.
+        fig = base_layout(fig, height=280)
+        fig.update_layout(
+            legend=dict(orientation="h", x=0.5, y=0.02, xanchor="center", yanchor="bottom"),
+            margin=dict(l=10, r=10, t=18, b=10),
+        )
+        # Reserve space at the bottom for the legend so the donut stays vertically centered.
+        fig.update_traces(domain=dict(x=[0.0, 1.0], y=[0.16, 1.0]))
         return fig
     return fig
 
