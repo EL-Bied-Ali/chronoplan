@@ -504,6 +504,47 @@ def inject_theme():
         margin: 0 !important;
         padding: 0 !important;
       }
+
+      /* ===== Helper tooltips (widget `help=`) ===== */
+      /* Streamlit renders the hover target as a div (not a <button>) in recent versions. */
+      [data-testid="stTooltipIcon"] [data-testid="stTooltipHoverTarget"],
+      button[data-testid="stTooltipIcon"],
+      [data-testid="stTooltipIcon"] > button{
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+        border-radius: 999px !important;
+        border: 1px solid rgba(148,163,184,.28) !important;
+        background: rgba(15,23,42,.55) !important;
+        color: rgba(157,168,198,.95) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 10px 22px rgba(0,0,0,.22) !important;
+        cursor: help !important;
+      }
+      [data-testid="stTooltipIcon"] svg,
+      button[data-testid="stTooltipIcon"] svg,
+      [data-testid="stTooltipIcon"] > button svg{
+        width: 12px !important;
+        height: 12px !important;
+      }
+      /* Tooltip bubble (BaseWeb) */
+      div[data-baseweb="tooltip"]{
+        font-family: 'DM Sans','Space Grotesk',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial !important;
+        background: rgba(15,23,42,.92) !important;
+        color: rgba(232,238,252,.98) !important;
+        border: 1px solid rgba(148,163,184,.22) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 18px 40px rgba(0,0,0,.45) !important;
+        padding: 10px 12px !important;
+        max-width: min(360px, 70vw) !important;
+        line-height: 1.35 !important;
+      }
+      div[data-baseweb="tooltip"] *{
+        font-family: inherit !important;
+      }
       /* Sidebar auth card */
       section[data-testid="stSidebar"] div.st-key-auth_card{
         margin: 6px 0 12px 0;
@@ -943,6 +984,55 @@ def inject_theme():
         border-color: rgba(96,165,250,.7);
         background: linear-gradient(180deg, rgba(96,165,250,.35), rgba(15,23,42,.7));
         box-shadow: 0 6px 16px rgba(0,0,0,.3);
+      }
+      /* Use a custom tooltip bubble so it matches Streamlit `help=` styling. */
+      .info-badge[data-tip]{
+        position: relative;
+        outline: none;
+      }
+      .info-badge[data-tip]::after{
+        content: attr(data-tip);
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        min-width: 220px;
+        max-width: min(360px, 70vw);
+        white-space: normal;
+        background: rgba(15,23,42,.92);
+        color: rgba(232,238,252,.98);
+        border: 1px solid rgba(148,163,184,.22);
+        border-radius: 12px;
+        box-shadow: 0 18px 40px rgba(0,0,0,.45);
+        padding: 10px 12px;
+        line-height: 1.35;
+        font-size: 13px;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateY(-4px);
+        pointer-events: none;
+        z-index: 9999;
+      }
+      .info-badge[data-tip]::before{
+        content: "";
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 8px;
+        width: 10px;
+        height: 10px;
+        background: rgba(15,23,42,.92);
+        border-left: 1px solid rgba(148,163,184,.22);
+        border-top: 1px solid rgba(148,163,184,.22);
+        transform: rotate(45deg);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 9998;
+      }
+      .info-badge[data-tip]:hover::after,
+      .info-badge[data-tip]:focus::after,
+      .info-badge[data-tip]:hover::before,
+      .info-badge[data-tip]:focus::before{
+        opacity: 1;
+        transform: translateY(0);
       }
       .filter-title{
         font-size: 14px;

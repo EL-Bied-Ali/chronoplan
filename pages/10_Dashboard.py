@@ -655,6 +655,11 @@ def _html_title_attr(tip: str | None) -> str:
         return ""
     return f' title="{html.escape(str(tip), quote=True)}"'
 
+def _html_data_tip_attr(tip: str | None) -> str:
+    if not tip:
+        return ""
+    return f' data-tip="{html.escape(str(tip), quote=True)}"'
+
 def fmt_date(dt):
     if dt is None:
         return "--"
@@ -698,7 +703,7 @@ def pct_tone(val):
 
 def metric_card(label: str, value: str, sub: str = "", tone: str | None = None, tip: str | None = None):
     cls = f"value {tone}" if tone else "value"
-    info_badge = f"<span class=\"info-badge\"{_html_title_attr(tip)}>ℹ</span>" if tip else ""
+    info_badge = f"<span class=\"info-badge\"{_html_data_tip_attr(tip)} tabindex=\"0\">&#9432;</span>" if tip else ""
     st.markdown(
         f"""
         <div class="card metric">
@@ -1769,7 +1774,7 @@ def render_dashboard():
 
     with st.container():
         st.markdown(
-            f"<div class='chart-heading'>▸ Weekly Momentum <span class='info-badge' title='{html.escape(TOOLTIPS['weekly_momentum'], quote=True)}'>ℹ</span></div>",
+            f"<div class='chart-heading'>▸ Weekly Momentum <span class='info-badge' data-tip='{html.escape(TOOLTIPS['weekly_momentum'], quote=True)}' tabindex='0'>&#9432;</span></div>",
             unsafe_allow_html=True,
         )
         st.plotly_chart(
@@ -1783,7 +1788,7 @@ def render_dashboard():
     with bottom[0]:
         with st.container():
             st.markdown(
-            f"<div class='chart-heading'>▸ Schedule Gap <span class='info-badge' title='{html.escape(TOOLTIPS['schedule_gap'], quote=True)}'>ℹ</span></div>",
+            f"<div class='chart-heading'>▸ Schedule Gap <span class='info-badge' data-tip='{html.escape(TOOLTIPS['schedule_gap'], quote=True)}' tabindex='0'>&#9432;</span></div>",
                 unsafe_allow_html=True,
             )
             st.plotly_chart(
@@ -1795,7 +1800,7 @@ def render_dashboard():
     with bottom[1]:
         with st.container():
             st.markdown(
-            f"<div class='chart-heading'>▸ Activity Mix <span class='info-badge' title='{html.escape(TOOLTIPS['activity_mix'], quote=True)}'>ℹ</span></div>",
+            f"<div class='chart-heading'>▸ Activity Mix <span class='info-badge' data-tip='{html.escape(TOOLTIPS['activity_mix'], quote=True)}' tabindex='0'>&#9432;</span></div>",
                 unsafe_allow_html=True,
             )
             st.plotly_chart(
