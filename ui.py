@@ -114,6 +114,15 @@ def inject_theme():
         position: relative;
         z-index: 1;
       }
+      /* Ensure the heading element container stacks above the Plotly element container. */
+      div[data-testid="stVerticalBlock"]:has(.chart-heading) div[data-testid="stElementContainer"]:has(.chart-heading){
+        position: relative;
+        z-index: 3;
+      }
+      div[data-testid="stVerticalBlock"]:has(.chart-heading) div[data-testid="stElementContainer"]:has(.stPlotlyChart){
+        position: relative;
+        z-index: 1;
+      }
       /* Allow metric cards to size naturally (no inner scroll) */
       div[data-testid="stElementContainer"]:has(.card.metric){
         overflow: visible !important;
