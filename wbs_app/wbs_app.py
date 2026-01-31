@@ -170,7 +170,7 @@ if st.session_state.get("active_project_id") and project_param != st.session_sta
     st.rerun()
 with st.sidebar:
     with st.container(key="back_to_projects_link"):
-        st.page_link("pages/0_Projects.py", label="Back to projects", icon=":material/arrow_back:")
+        st.page_link("pages/0_Projects.py", label="Back to projects")
 render_auth_sidebar(user, show_branding=False)
 inject_theme()
 PREVIEW_ENABLED = os.getenv("PREVIEW_MODE", "").strip().lower() in {"1", "true", "yes", "on"}

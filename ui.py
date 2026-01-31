@@ -460,7 +460,7 @@ def inject_theme():
         color: rgba(157,168,198,.9);
       }
       section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]::before{
-        content: "? ";
+        content: "< ";
         color: rgba(157,168,198,.8);
       }
       section[data-testid="stSidebar"] div.st-key-back_to_projects_link [data-testid="stPageLink-NavLink"]:hover{

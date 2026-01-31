@@ -251,7 +251,7 @@ elif plan_status == "active":
 
 with st.sidebar:
     with st.container(key="back_to_projects_link"):
-        st.page_link("pages/0_Projects.py", label="Back to projects", icon=":material/arrow_back:")
+        st.page_link("pages/0_Projects.py", label="Back to projects")
 render_auth_sidebar(user)
 
 project = get_project(st.session_state.get("active_project_id"), owner_id=owner_id)
