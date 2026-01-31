@@ -44,18 +44,20 @@ def inject_theme():
         border-radius:var(--radius);
         box-shadow:var(--shadow);
         padding:10px 12px;
-        overflow: hidden;
+        /* Don't clip custom tooltip bubbles. */
+        overflow: visible;
       }
       .card::before{
         content:"";
         position:absolute;
-        inset:-12% -10% auto -10%;
+        inset: 0;
         height:var(--glow-height);
         background:
           radial-gradient(520px 240px at 12% 0%, rgba(75,111,244,.20), transparent 60%),
           radial-gradient(520px 240px at 88% 10%, rgba(47,193,146,.16), transparent 62%);
         opacity:.9;
         pointer-events:none;
+        border-radius: var(--radius) var(--radius) 0 0;
       }
       .card > *{
         position: relative;
@@ -81,18 +83,20 @@ def inject_theme():
         border-radius:var(--radius);
         box-shadow:var(--shadow);
         padding:0;
-        overflow:hidden;
+        /* Don't clip custom tooltip bubbles. */
+        overflow:visible;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading)::before{
         content:"";
         position:absolute;
-        inset:-12% -10% auto -10%;
+        inset: 0;
         height:var(--glow-height);
         background:
           radial-gradient(520px 240px at 12% 0%, rgba(75,111,244,.20), transparent 60%),
           radial-gradient(520px 240px at 88% 10%, rgba(47,193,146,.16), transparent 62%);
         opacity:.9;
         pointer-events:none;
+        border-radius: var(--radius) var(--radius) 0 0;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) > *{
         position: relative;
@@ -984,6 +988,7 @@ def inject_theme():
       .info-badge[data-tip]{
         position: relative;
         outline: none;
+        z-index: 0;
       }
       .info-badge[data-tip]::after{
         content: attr(data-tip);
@@ -1028,6 +1033,10 @@ def inject_theme():
       .info-badge[data-tip]:focus::before{
         opacity: 1;
         transform: translateY(0);
+      }
+      .info-badge[data-tip]:hover,
+      .info-badge[data-tip]:focus{
+        z-index: 9999;
       }
       .gauge-help[data-tip]{
         position: relative;
