@@ -78,7 +78,8 @@ def inject_theme():
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading){
         position: relative;
-        --glow-height: min(55%, calc(2.8em + 32px));
+        /* Keep the top glow/header band compact (avoid a tall first row). */
+        --glow-height: min(42%, calc(2.2em + 18px));
         background: linear-gradient(180deg, rgba(22,29,58,.96), rgba(13,19,48,.92));
         border:1px solid var(--border);
         border-radius:var(--radius);
@@ -105,11 +106,11 @@ def inject_theme():
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .chart-heading{
         position: relative;
-        padding:12px 34px 4px 12px;
+        padding:10px 34px 3px 12px;
         z-index: 2;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .stPlotlyChart{
-        padding:0 10px 12px 10px;
+        padding:6px 10px 12px 10px;
         box-sizing:border-box;
         position: relative;
         z-index: 1;
@@ -136,6 +137,7 @@ def inject_theme():
         animation: chartFadeUp__ANIM_SEQ__ 1400ms cubic-bezier(.22,.7,.2,1) both;
         animation-delay: 250ms;
         will-change: transform, opacity;
+        overflow: visible !important;
       }
       .stPlotlyChart .main-svg .trace .bars path{
         transform-origin: bottom;
@@ -435,10 +437,16 @@ def inject_theme():
       /* Prevent plotly overflow */
       .stPlotlyChart, .js-plotly-plot, .plot-container{ width:100% !important; max-width:100% !important; }
       .js-plotly-plot .main-svg{ width:100% !important; }
+      .stPlotlyChart .js-plotly-plot,
+      .stPlotlyChart .plot-container{
+        overflow: visible !important;
+      }
       /* Plotly modebar: remove its own background so only the outer glass card shows. */
       .js-plotly-plot .modebar{
         background: transparent !important;
         box-shadow: none !important;
+        right: 8px !important;
+        top: 8px !important;
       }
       .js-plotly-plot .modebar-group{
         background: transparent !important;
