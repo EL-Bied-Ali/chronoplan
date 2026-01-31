@@ -1100,7 +1100,12 @@ def weekly_progress_fig(data, current_week: str | date | None):
         legend=dict(x=1, y=1.08, xanchor="right", orientation="h"),
     )
     fig = base_layout(fig, height=350)
-    fig.update_layout(margin=dict(l=12, r=40, t=24, b=28))
+    # Let the chart blend into the "glassy" card container (avoid a second inner rectangle/frame).
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=12, r=40, t=24, b=28),
+    )
     return fig
 
 
@@ -1355,7 +1360,13 @@ def weekly_sv_fig(data, current_week: str | date | None):
         margin=dict(t=28, b=40),
         bargap=0.25,
     )
-    return base_layout(fig, height=280)
+    fig = base_layout(fig, height=280)
+    # Let the chart blend into the "glassy" card container (avoid a second inner rectangle/frame).
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
 
 
 def activities_status_fig(data: dict, error_msg: str | None = None, apply_layout: bool = True):
@@ -1422,6 +1433,8 @@ def activities_status_fig(data: dict, error_msg: str | None = None, apply_layout
         # Streamlit columns stretching to the tallest chart in the row.
         fig = base_layout(fig, height=280)
         fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
             legend=dict(orientation="h", x=0.5, y=0.02, xanchor="center", yanchor="bottom"),
             margin=dict(l=10, r=10, t=18, b=10),
         )
