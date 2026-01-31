@@ -660,6 +660,14 @@ def _html_data_tip_attr(tip: str | None) -> str:
         return ""
     return f' data-tip="{html.escape(str(tip), quote=True)}"'
 
+INFO_ICON_SVG = (
+    "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" "
+    "fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" "
+    "class=\"icon\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle>"
+    "<path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"></path>"
+    "<line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"></line></svg>"
+)
+
 def fmt_date(dt):
     if dt is None:
         return "--"
@@ -703,7 +711,11 @@ def pct_tone(val):
 
 def metric_card(label: str, value: str, sub: str = "", tone: str | None = None, tip: str | None = None):
     cls = f"value {tone}" if tone else "value"
-    info_badge = f"<span class=\"info-badge\"{_html_data_tip_attr(tip)} tabindex=\"0\">&#9432;</span>" if tip else ""
+    info_badge = (
+        f"<span class=\"info-badge\"{_html_data_tip_attr(tip)} tabindex=\"0\">{INFO_ICON_SVG}</span>"
+        if tip
+        else ""
+    )
     st.markdown(
         f"""
         <div class="card metric">
@@ -1774,7 +1786,7 @@ def render_dashboard():
 
     with st.container():
         st.markdown(
-            f"<div class='chart-heading'>▸ Weekly Momentum <span class='info-badge' data-tip='{html.escape(TOOLTIPS['weekly_momentum'], quote=True)}' tabindex='0'>&#9432;</span></div>",
+            f"<div class='chart-heading'>▸ Weekly Momentum <span class='info-badge' data-tip='{html.escape(TOOLTIPS['weekly_momentum'], quote=True)}' tabindex='0'>{INFO_ICON_SVG}</span></div>",
             unsafe_allow_html=True,
         )
         st.plotly_chart(
@@ -1788,7 +1800,7 @@ def render_dashboard():
     with bottom[0]:
         with st.container():
             st.markdown(
-            f"<div class='chart-heading'>▸ Schedule Gap <span class='info-badge' data-tip='{html.escape(TOOLTIPS['schedule_gap'], quote=True)}' tabindex='0'>&#9432;</span></div>",
+            f"<div class='chart-heading'>▸ Schedule Gap <span class='info-badge' data-tip='{html.escape(TOOLTIPS['schedule_gap'], quote=True)}' tabindex='0'>{INFO_ICON_SVG}</span></div>",
                 unsafe_allow_html=True,
             )
             st.plotly_chart(
@@ -1800,7 +1812,7 @@ def render_dashboard():
     with bottom[1]:
         with st.container():
             st.markdown(
-            f"<div class='chart-heading'>▸ Activity Mix <span class='info-badge' data-tip='{html.escape(TOOLTIPS['activity_mix'], quote=True)}' tabindex='0'>&#9432;</span></div>",
+            f"<div class='chart-heading'>▸ Activity Mix <span class='info-badge' data-tip='{html.escape(TOOLTIPS['activity_mix'], quote=True)}' tabindex='0'>{INFO_ICON_SVG}</span></div>",
                 unsafe_allow_html=True,
             )
             st.plotly_chart(
