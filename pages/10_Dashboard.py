@@ -1700,7 +1700,7 @@ def render_dashboard():
             planned_tip = local_m.get("planned_progress_tip")
             if planned_tip:
                 st.markdown(
-            f"<div class='gauge-help' title='{html.escape(planned_tip, quote=True)}'>ℹ</div>",
+            f"<div class='gauge-help-row'><span class='gauge-help' data-tip='{html.escape(planned_tip, quote=True)}' tabindex='0'>{INFO_ICON_SVG}</span></div>",
                     unsafe_allow_html=True,
                 )
             st.plotly_chart(
@@ -1717,7 +1717,7 @@ def render_dashboard():
             actual_tip = local_m.get("actual_progress_tip")
             if actual_tip:
                 st.markdown(
-            f"<div class='gauge-help' title='{html.escape(actual_tip, quote=True)}'>ℹ</div>",
+            f"<div class='gauge-help-row'><span class='gauge-help' data-tip='{html.escape(actual_tip, quote=True)}' tabindex='0'>{INFO_ICON_SVG}</span></div>",
                     unsafe_allow_html=True,
                 )
             st.plotly_chart(

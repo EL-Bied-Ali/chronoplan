@@ -62,7 +62,17 @@ def inject_theme():
         z-index: 1;
       }
       .chart-card{ padding:8px 10px; overflow:hidden; }
-      .chart-heading{ font-size:17px; font-weight:700; color:var(--text); margin:0 0 8px 0; font-family:'Space Grotesk','DM Sans',sans-serif; letter-spacing:0.2px; }
+      .chart-heading{
+        font-size:17px;
+        font-weight:700;
+        color:var(--text);
+        margin:0 0 8px 0;
+        font-family:'Space Grotesk','DM Sans',sans-serif;
+        letter-spacing:0.2px;
+        display:flex;
+        align-items:center;
+        gap:12px;
+      }
       div[data-testid="stVerticalBlock"]:has(.chart-heading){
         position: relative;
         --glow-height: min(55%, calc(2.8em + 32px));
@@ -248,7 +258,15 @@ def inject_theme():
         gap:4px;
         min-height:96px;
       }
-      .metric .label{ color:var(--muted); font-weight:600; font-size:15px; letter-spacing:0.1px; }
+      .metric .label{
+        color:var(--muted);
+        font-weight:600;
+        font-size:15px;
+        letter-spacing:0.1px;
+        display:flex;
+        align-items:center;
+        gap:8px;
+      }
       .metric .value{ color:var(--text); font-weight:800; font-size:28px; }
       .metric .value.positive{ color:var(--accent-2); }
       .metric .value.warn{ color:var(--accent); }
@@ -902,24 +920,32 @@ def inject_theme():
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 22px;
-        height: 22px;
+        width: 16px;
+        height: 16px;
         border-radius: 999px;
-        border: 1px solid rgba(148,163,184,.35);
-        background: rgba(15,23,42,.6);
-        color: var(--muted);
+        border: none;
+        background: transparent;
+        color: rgba(157,168,198,.9);
         font-size: 12px;
         font-weight: 700;
         text-transform: none;
-        margin: 0 4px 2px 0;
+        margin: 0;
         cursor: help;
-        transition: border-color .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+        transition: color .15s ease, transform .15s ease;
       }
       .gauge-help:hover{
-        color: var(--text);
-        border-color: rgba(96,165,250,.6);
-        background: rgba(75,111,244,.22);
-        box-shadow: 0 6px 16px rgba(0,0,0,.25);
+        color: rgba(232,238,252,.98);
+        transform: translateY(-1px);
+      }
+      .gauge-help svg{
+        width: 16px;
+        height: 16px;
+        display: block;
+      }
+      .gauge-help-row{
+        display: flex;
+        justify-content: flex-end;
+        margin: 0 0 6px 0;
       }
       .info-badge{
         display: inline-flex;
@@ -948,6 +974,11 @@ def inject_theme():
         width: 16px;
         height: 16px;
         display: block;
+      }
+      /* Push the info icon to the far right when used inside headings/labels. */
+      .metric .label .info-badge,
+      .chart-heading .info-badge{
+        margin-left: auto;
       }
       /* Use a custom tooltip bubble so it matches Streamlit `help=` styling. */
       .info-badge[data-tip]{
@@ -995,6 +1026,54 @@ def inject_theme():
       .info-badge[data-tip]:focus::after,
       .info-badge[data-tip]:hover::before,
       .info-badge[data-tip]:focus::before{
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .gauge-help[data-tip]{
+        position: relative;
+        outline: none;
+      }
+      .gauge-help[data-tip]::after{
+        content: attr(data-tip);
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        min-width: 220px;
+        max-width: min(360px, 70vw);
+        white-space: normal;
+        background: rgba(49,51,63,.96);
+        color: rgba(255,255,255,.96);
+        border: 1px solid rgba(255,255,255,.10);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(0,0,0,.35);
+        padding: 8px 10px;
+        line-height: 1.35;
+        font-size: 12px;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateY(-4px);
+        pointer-events: none;
+        z-index: 9999;
+      }
+      .gauge-help[data-tip]::before{
+        content: "";
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 8px;
+        width: 10px;
+        height: 10px;
+        background: rgba(49,51,63,.96);
+        border-left: 1px solid rgba(255,255,255,.10);
+        border-top: 1px solid rgba(255,255,255,.10);
+        transform: rotate(45deg);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 9998;
+      }
+      .gauge-help[data-tip]:hover::after,
+      .gauge-help[data-tip]:focus::after,
+      .gauge-help[data-tip]:hover::before,
+      .gauge-help[data-tip]:focus::before{
         opacity: 1;
         transform: translateY(0);
       }
