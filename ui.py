@@ -71,9 +71,6 @@ def inject_theme():
         margin:0 0 8px 0;
         font-family:'Space Grotesk','DM Sans',sans-serif;
         letter-spacing:0.2px;
-        display:flex;
-        align-items:center;
-        gap:12px;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading){
         position: relative;
@@ -103,7 +100,8 @@ def inject_theme():
         z-index: 1;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .chart-heading{
-        padding:12px 14px 4px 14px;
+        position: relative;
+        padding:12px 34px 4px 14px;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .stPlotlyChart{
         padding:0 12px 12px 12px;
@@ -267,9 +265,9 @@ def inject_theme():
         font-weight:600;
         font-size:15px;
         letter-spacing:0.1px;
-        display:flex;
-        align-items:center;
-        gap:8px;
+        position: relative;
+        padding-right: 24px;
+        line-height: 1.15;
       }
       .metric .value{ color:var(--text); font-weight:800; font-size:28px; }
       .metric .value.positive{ color:var(--accent-2); }
@@ -979,10 +977,18 @@ def inject_theme():
         height: 16px;
         display: block;
       }
-      /* Push the info icon to the far right when used inside headings/labels. */
-      .metric .label .info-badge,
-      .chart-heading .info-badge{
-        margin-left: auto;
+      /* Place the info icon at the far right without affecting row height. */
+      .metric .label .info-badge{
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+      }
+      div[data-testid="stVerticalBlock"]:has(.chart-heading) .chart-heading .info-badge{
+        position: absolute;
+        top: 50%;
+        right: 12px;
+        transform: translateY(-50%);
       }
       /* Use a custom tooltip bubble so it matches Streamlit `help=` styling. */
       .info-badge[data-tip]{
