@@ -105,11 +105,11 @@ def inject_theme():
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .chart-heading{
         position: relative;
-        padding:12px 34px 4px 14px;
+        padding:12px 34px 4px 12px;
         z-index: 2;
       }
       div[data-testid="stVerticalBlock"]:has(.chart-heading) .stPlotlyChart{
-        padding:0 12px 12px 12px;
+        padding:0 10px 12px 10px;
         box-sizing:border-box;
         position: relative;
         z-index: 1;
@@ -435,6 +435,31 @@ def inject_theme():
       /* Prevent plotly overflow */
       .stPlotlyChart, .js-plotly-plot, .plot-container{ width:100% !important; max-width:100% !important; }
       .js-plotly-plot .main-svg{ width:100% !important; }
+      /* Plotly modebar: remove its own background so only the outer glass card shows. */
+      .js-plotly-plot .modebar{
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      .js-plotly-plot .modebar-group{
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .js-plotly-plot .modebar-btn{
+        background: transparent !important;
+        border-radius: 8px !important;
+      }
+      .js-plotly-plot .modebar-btn:hover{
+        background: rgba(255,255,255,.10) !important;
+      }
+      .js-plotly-plot .modebar-btn svg{
+        fill: rgba(232,238,252,.88) !important;
+        stroke: rgba(232,238,252,.88) !important;
+      }
+      .js-plotly-plot .modebar-btn:hover svg{
+        fill: rgba(232,238,252,.98) !important;
+        stroke: rgba(232,238,252,.98) !important;
+      }
 
       .app-bg{
         position:fixed; inset:0; pointer-events:none; z-index:-1;
