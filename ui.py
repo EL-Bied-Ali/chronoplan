@@ -38,7 +38,7 @@ def inject_theme():
 
       .card{
         position: relative;
-        --glow-height: min(55%, calc(2.8em + 32px));
+        --glow-height: min(50%, calc(2.6em + 28px));
         background: linear-gradient(180deg, rgba(22,29,58,.96), rgba(13,19,48,.92));
         border:1px solid var(--border);
         border-radius:var(--radius);
@@ -46,6 +46,10 @@ def inject_theme():
         padding:10px 12px;
         /* Don't clip custom tooltip bubbles. */
         overflow: visible;
+      }
+      /* Metric cards look better with a shallower glow (keeps the title row compact visually). */
+      .card.metric{
+        --glow-height: min(36%, calc(2.2em + 18px));
       }
       .card::before{
         content:"";
