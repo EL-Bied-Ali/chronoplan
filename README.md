@@ -98,9 +98,3 @@ Then configure Paddle webhook URL:
 ```text
 http://YOUR_HOST:8001/webhook/paddle
 ```
-
-## Portfolio highlights (LinkedIn-friendly)
-- Built an end-to-end planning analytics product, not just isolated charts
-- Implemented authentication, access control, billing status, and subscription hooks
-- Designed Excel ingestion and mapping flows that support imperfect real-world source files
-- Structured the app as reusable service modules (`projects`, `billing`, `auth`, `wbs`)
