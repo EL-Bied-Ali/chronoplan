@@ -1,62 +1,106 @@
-# WBS Dashboard (Streamlit)
+# ChronoPlan AN
+ChronoPlan AN is a Streamlit-based project controls platform for planning and progress tracking teams.
 
-Streamlit dashboards to explore project progress data with S-curves, KPIs, and WBS details. The repo hosts the main dashboard plus a small WBS extractor UI.
+It combines:
+- project-level workspace management
+- Excel-driven WBS extraction and mapping
+- KPI dashboards and S-curves
+- Google OAuth authentication
+- billing and subscription workflows (Paddle checkout + webhook sync)
 
-## Apps
-- Main dashboard: `streamlit run app.py` (uses bundled demo data; upload your Excel file to drive live charts).
-- WBS extractor UI: `streamlit run wbs_app/wbs_app.py` (kept separate so it can have its own layout/theme).
-- Quick smoke test: `streamlit run test_app.py` to confirm Streamlit/pandas/plotly install.
+## Why this project
+This project was built to make planning analytics usable by non-technical teams: upload a scheduling workbook, map fields once, then get clean progress views and portfolio-level project organization.
 
-## Getting started
-1) Use Python 3.12 (see `runtime.txt`).
-2) Create a virtual env and install deps:
-   ```bash
-   python -m venv .venv
-   .venv\\Scripts\\activate
-   pip install -r requirements.txt
-   ```
-3) Run one of the apps above.
+## Core capabilities
+- Multi-project workspace with per-project file storage and mapping persistence
+- Interactive KPI dashboard (planned vs actual, delay, SPI/SV, weekly momentum)
+- S-curve page with planned, actual, and forecast progression
+- WBS visualization and extraction pipeline from real Excel planning exports
+- Google login, session handling, and protected routes
+- Trial/subscription access control and billing status pages
+- Admin interface for account plan operations and billing audit events
 
-## Data and settings
-- Upload an Excel progress file when prompted; column mappings live in `data.py` (`MAPPINGS` dict).
-- If you deploy the dashboard alongside the WBS UI, set `WBS_URL` (env var or Streamlit secret) so the cross-link points to the right host/port. The app defaults to `http://localhost:8502` when running locally.
+## Tech stack
+- Python 3.11
+- Streamlit
+- Pandas + OpenPyXL
+- Plotly
+- Authlib / Google OAuth
+- SQLite (local billing + account store)
+- Paddle API / webhooks
+- Optional Cloudflare Worker integration for webhook handling
 
-## Google auth
-This app supports Google OAuth with a signed cookie session. Configure the following secrets or env vars:
+## Repository structure
+```text
+.
+|-- app.py                      # Main dashboard app entry
+|-- pages/                      # Multi-page Streamlit routes
+|-- wbs_app/                    # Standalone WBS extraction UI
+|-- auth_google.py              # OAuth + session logic
+|-- billing_store.py            # Billing/account persistence and helpers
+|-- projects.py                 # Project CRUD + per-project file state
+|-- scripts/
+|   `-- paddle_webhook_server.py
+|-- workers/                    # Optional Cloudflare worker for webhooks
+|-- artifacts/                  # Local runtime files + template
+`-- .streamlit/                 # Streamlit config and local secrets
 ```
+
+Additional docs:
+- `docs/architecture.md`
+- `docs/linkedin-summary.md`
+
+## Run locally
+1. Create and activate a virtual environment.
+2. Install dependencies.
+3. Add required secrets.
+4. Run the app.
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Optional routes:
+- `streamlit run pages/0_Projects.py`
+- `streamlit run wbs_app/wbs_app.py`
+
+## Required configuration
+Set these via environment variables or `.streamlit/secrets.toml`.
+
+```toml
 GOOGLE_CLIENT_ID = "..."
 GOOGLE_CLIENT_SECRET = "..."
-AUTH_COOKIE_SECRET = "set-a-long-random-string"
+AUTH_COOKIE_SECRET = "long-random-secret"
 AUTH_REDIRECT_URI = "http://localhost:8501"
 AUTH_COOKIE_TTL_DAYS = "7"
+
+PADDLE_CLIENT_TOKEN = "..."
+PADDLE_ENV = "sandbox" # or "production"
+PADDLE_PRICE_EUR_SANDBOX = "..."
+PADDLE_PRICE_EUR = "..."
+PADDLE_WEBHOOK_SECRET = "..."
+PADDLE_WEBHOOK_PORT = "8001"
+PADDLE_WEBHOOK_PATH = "/webhook/paddle"
 ```
-Notes:
-- Add your redirect URI(s) in the Google Console (local and Streamlit Cloud URLs).
-- `AUTH_COOKIE_SECRET` must stay stable across restarts or all sessions are invalidated.
 
-## Repo notes
-- `.gitignore` excludes virtualenvs, caches, Excel exports, and large videos so the repo stays light.
-- Everything else can be committed normally; keep the two apps independent so each retains its theme.
-
-## Paddle webhooks (billing sync)
-To keep `plan_status`/`plan_end` in sync after checkout, run the lightweight webhook server:
+## Billing webhook sync
+To keep account plans in sync after checkout:
 
 ```bash
 python scripts/paddle_webhook_server.py
 ```
 
-Configure secrets (env vars or `.streamlit/secrets.toml`):
-```
-PADDLE_WEBHOOK_SECRET = "your-webhook-secret"
-PADDLE_WEBHOOK_PORT = "8001"
-PADDLE_WEBHOOK_PATH = "/webhook/paddle"
-```
+Then configure Paddle webhook URL:
 
-Then set the webhook URL in Paddle to:
-```
+```text
 http://YOUR_HOST:8001/webhook/paddle
 ```
 
-The handler maps Paddle subscription events to:
-- `plan_status = active|trialing`
-- `plan_end` from the current billing period end date
+## Portfolio highlights (LinkedIn-friendly)
+- Built an end-to-end planning analytics product, not just isolated charts
+- Implemented authentication, access control, billing status, and subscription hooks
+- Designed Excel ingestion and mapping flows that support imperfect real-world source files
+- Structured the app as reusable service modules (`projects`, `billing`, `auth`, `wbs`)
