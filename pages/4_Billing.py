@@ -1023,22 +1023,6 @@ section[data-testid="stSidebar"],
   text-decoration: none !important;
 }
 
-div.st-key-billing_back_btn .stButton button {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--muted);
-  padding: 6px 8px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-div.st-key-billing_back_btn .stButton button:hover {
-  color: var(--text);
-  background: rgba(15,23,42,0.45);
-  border-color: rgba(148,163,184,0.2);
-}
-
 .brand {
   display: flex;
   align-items: center;
@@ -1773,8 +1757,7 @@ top_html = f"""
 """
 
 with st.container(key="billing_back_btn"):
-    if st.button("<- Back to projects", key="billing_back_projects"):
-        st.switch_page("pages/0_Projects.py")
+    st.page_link("pages/0_Projects.py", label="Back to projects")
 
 st.markdown(top_html, unsafe_allow_html=True)
 if plan_updated_at_raw:
@@ -2139,12 +2122,13 @@ with col_right:
     )
     st.markdown(history_html, unsafe_allow_html=True)
 
-st.divider()
-st.caption("Legal")
-col_terms, col_privacy, col_refunds = st.columns(3)
-with col_terms:
-    st.page_link("pages/90_Terms.py", label="Terms")
-with col_privacy:
-    st.page_link("pages/91_Privacy.py", label="Privacy")
-with col_refunds:
-    st.page_link("pages/92_Refunds.py", label="Refunds")
+with st.container(key="billing_legal_footer"):
+    st.divider()
+    st.caption("Legal")
+    col_terms, col_privacy, col_refunds = st.columns(3)
+    with col_terms:
+        st.page_link("pages/90_Terms.py", label="Terms")
+    with col_privacy:
+        st.page_link("pages/91_Privacy.py", label="Privacy")
+    with col_refunds:
+        st.page_link("pages/92_Refunds.py", label="Refunds")

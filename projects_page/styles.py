@@ -54,6 +54,175 @@ body::before{
     var(--bg);
   z-index: -1;
 }
+
+/* ===== Back links (match Dashboard "Back to projects") ===== */
+div.st-key-billing_back_btn,
+div.st-key-checkout_back_btn,
+div.st-key-legal_back_btn{
+  width: fit-content;
+}
+
+div.st-key-billing_back_btn [data-testid="stPageLink-NavLink"],
+div.st-key-checkout_back_btn [data-testid="stPageLink-NavLink"],
+div.st-key-legal_back_btn [data-testid="stPageLink-NavLink"]{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted) !important;
+  text-decoration: none !important;
+  padding: 6px 0 !important;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none !important;
+  width: fit-content;
+  line-height: 1.1;
+}
+
+div.st-key-billing_back_btn [data-testid="stMarkdownContainer"] p,
+div.st-key-checkout_back_btn [data-testid="stMarkdownContainer"] p,
+div.st-key-legal_back_btn [data-testid="stMarkdownContainer"] p{
+  margin: 0 !important;
+  line-height: 1.1 !important;
+}
+
+div.st-key-billing_back_btn [data-testid="stPageLink-NavLink"]::before,
+div.st-key-checkout_back_btn [data-testid="stPageLink-NavLink"]::before,
+div.st-key-legal_back_btn [data-testid="stPageLink-NavLink"]::before{
+  content: "< ";
+  color: rgba(157,168,198,0.85);
+}
+
+div.st-key-billing_back_btn [data-testid="stPageLink-NavLink"]:hover,
+div.st-key-checkout_back_btn [data-testid="stPageLink-NavLink"]:hover,
+div.st-key-legal_back_btn [data-testid="stPageLink-NavLink"]:hover{
+  color: var(--text) !important;
+  background: rgba(15,23,42,0.45);
+  border-color: rgba(148,163,184,0.2);
+  padding: 6px 10px !important;
+}
+
+/* ===== Billing: Legal footer ===== */
+div.st-key-billing_legal_footer{
+  max-width: min(820px, calc(100vw - 48px));
+  margin: 22px auto 0;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(2, 6, 23, 0.16);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+}
+div.st-key-billing_legal_footer hr{
+  border: none;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  margin: 6px 0 10px;
+}
+div.st-key-billing_legal_footer [data-testid="stMarkdownContainer"] p{
+  margin: 0 0 10px 0 !important;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(157,168,198,0.85);
+}
+div.st-key-billing_legal_footer [data-testid="stCaptionContainer"] p{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin: 0 0 12px 0 !important;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  background: rgba(15, 23, 42, 0.42);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(157,168,198,0.88);
+}
+div.st-key-billing_legal_footer div[data-testid="stHorizontalBlock"]{
+  gap: 12px;
+  align-items: stretch;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr;
+  width: 100% !important;
+}
+div.st-key-billing_legal_footer div[data-testid="stColumn"]{
+  display: flex;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+div.st-key-billing_legal_footer div[data-testid="stColumn"] > div{
+  flex: 1 1 auto;
+  width: 100% !important;
+}
+div.st-key-billing_legal_footer div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"]{
+  width: 100% !important;
+}
+/* Streamlit often hard-sets these containers to width="fit-content". Override so buttons can stretch. */
+div.st-key-billing_legal_footer div[data-testid="stElementContainer"][width="fit-content"]{
+  width: 100% !important;
+  max-width: 100% !important;
+}
+div.st-key-billing_legal_footer div[data-testid="stElementContainer"][width="fit-content"] > div{
+  width: 100% !important;
+}
+div.st-key-billing_legal_footer [data-testid="stPageLink"]{
+  width: 100% !important;
+}
+div.st-key-billing_legal_footer [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
+  width: 100% !important;
+}
+div.st-key-billing_legal_footer [data-testid="stPageLink-NavLink"]{
+  width: 100% !important;
+}
+div.st-key-billing_legal_footer [data-testid="stPageLink-NavLink"]{
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.62), rgba(2, 6, 23, 0.34));
+  box-shadow: 0 14px 28px rgba(0,0,0,0.22);
+  text-decoration: none !important;
+  font-weight: 700;
+  color: rgba(232,238,252,0.96) !important;
+  transform: translateY(0);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+div.st-key-billing_legal_footer [data-testid="stPageLink-NavLink"]:hover{
+  transform: translateY(-1px);
+  border-color: rgba(109, 213, 237, 0.45);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.42));
+  box-shadow: 0 18px 34px rgba(0,0,0,0.26);
+}
+div.st-key-billing_legal_footer [data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"] p{
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: rgba(232,238,252,0.96) !important;
+}
+
+@media (max-width: 720px){
+  div.st-key-billing_legal_footer{
+    max-width: calc(100vw - 24px);
+    padding: 10px 10px 12px;
+  }
+  div.st-key-billing_legal_footer div[data-testid="stHorizontalBlock"]{
+    grid-template-columns: 1fr;
+  }
+  div.st-key-billing_legal_footer [data-testid="stPageLink-NavLink"]{
+    height: 46px;
+  }
+}
 </style>
 """
 
@@ -841,6 +1010,216 @@ def inject_projects_css() -> None:
     if should_disable_css():
         return
     st.markdown(PROJECTS_CSS, unsafe_allow_html=True)
+
+
+def inject_legal_css() -> None:
+    if should_disable_css():
+        return
+
+    st.markdown(
+        """
+<style id="chronoplan-legal-css">
+div.st-key-legal_page{
+  max-width: min(980px, calc(100vw - 48px));
+  margin: 28px auto 96px auto;
+}
+
+/* Back to billing: spacing inside legal container */
+div.st-key-legal_page div.st-key-legal_back_btn{
+  width: fit-content;
+  margin: 0 0 10px 0;
+}
+
+/* Main content card */
+div.st-key-legal_page div[data-testid="stMarkdown"]:has(h1){
+  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.38);
+  padding: 22px 26px;
+}
+
+/* Typography */
+div.st-key-legal_page [data-testid="stMarkdownContainer"]{
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.65;
+}
+div.st-key-legal_page hr{
+  border: none;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  margin: 18px 0;
+}
+div.st-key-legal_page h1{
+  font-family: "Fraunces", serif;
+  font-size: 46px;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px 0;
+}
+div.st-key-legal_page h2{
+  font-size: 20px;
+  font-weight: 700;
+  margin: 24px 0 10px 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+div.st-key-legal_page h3{
+  font-size: 16px;
+  font-weight: 700;
+  margin: 18px 0 8px 0;
+}
+div.st-key-legal_page p{
+  margin: 10px 0;
+}
+div.st-key-legal_page ul,
+div.st-key-legal_page ol{
+  padding-left: 1.25em;
+}
+div.st-key-legal_page li{
+  margin: 6px 0;
+}
+div.st-key-legal_page strong{
+  color: rgba(255,255,255,0.95);
+}
+
+/* Links */
+div.st-key-legal_page a{
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(109, 213, 237, 0.35);
+}
+div.st-key-legal_page a:hover{
+  border-bottom-color: rgba(109, 213, 237, 0.75);
+}
+
+/* Inline code */
+div.st-key-legal_page code{
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.92em;
+}
+
+/* Bottom page links (footer only) */
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stPageLink-NavLink"]{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px !important;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.50);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+  font-weight: 700;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stPageLink-NavLink"]:hover{
+  border-color: rgba(109, 213, 237, 0.45);
+  background: rgba(15, 23, 42, 0.70);
+}
+
+/* Footer nav (buttons feel better when grouped) */
+div.st-key-legal_page div.st-key-legal_footer{
+  max-width: min(760px, 100%);
+  margin: 18px auto 0 auto;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(2, 6, 23, 0.18);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.30);
+}
+div.st-key-legal_page div.st-key-legal_footer hr{
+  margin: 8px 0 14px;
+  border-top-color: rgba(148, 163, 184, 0.16);
+}
+div.st-key-legal_page div.st-key-legal_footer div[data-testid="stHorizontalBlock"]{
+  gap: 12px;
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+div.st-key-legal_page div.st-key-legal_footer div[data-testid="stColumn"]{
+  display: flex;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+div.st-key-legal_page div.st-key-legal_footer div[data-testid="stColumn"] > div{
+  flex: 1 1 auto;
+}
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stPageLink"]{
+  width: 100% !important;
+}
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
+  width: 100% !important;
+}
+
+/* Ensure the "Back to billing" link stays compact (not full-width CTA). */
+div.st-key-legal_page div.st-key-legal_back_btn [data-testid="stPageLink"],
+div.st-key-legal_page div.st-key-legal_back_btn [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
+  width: fit-content !important;
+}
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stPageLink-NavLink"]{
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.68), rgba(2, 6, 23, 0.42));
+  justify-content: space-between;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.26);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateY(0);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  position: relative;
+}
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stPageLink-NavLink"]::after{
+  content: "→";
+  opacity: 0.78;
+  color: rgba(232, 238, 252, 0.86);
+  font-weight: 900;
+  transform: translateX(0);
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stPageLink-NavLink"]:hover{
+  transform: translateY(-1px);
+  border-color: rgba(109, 213, 237, 0.45);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.48));
+  box-shadow: 0 16px 34px rgba(0,0,0,0.30);
+}
+div.st-key-legal_page div.st-key-legal_footer [data-testid="stPageLink-NavLink"]:hover::after{
+  opacity: 0.95;
+  transform: translateX(2px);
+}
+
+@media (max-width: 720px){
+  div.st-key-legal_page{
+    max-width: calc(100vw - 24px);
+    margin: 18px auto 72px auto;
+  }
+  div.st-key-legal_page div[data-testid="stMarkdown"]{
+    padding: 16px 16px;
+    border-radius: 16px;
+  }
+  div.st-key-legal_page h1{
+    font-size: 34px;
+  }
+  div.st-key-legal_page div.st-key-legal_footer{
+    max-width: 100%;
+    padding: 10px 10px 12px;
+  }
+  div.st-key-legal_page div.st-key-legal_footer div[data-testid="stHorizontalBlock"]{
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+""".strip(),
+        unsafe_allow_html=True,
+    )
 
 
 def clean_html_block(markup: str) -> str:

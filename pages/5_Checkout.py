@@ -653,8 +653,7 @@ logo_uri = _get_logo_data_uri()
 logo_html = f'<img class="brand-logo" src="{logo_uri}" alt="ChronoPlan logo" />' if logo_uri else ""
 
 with st.container(key="checkout_back_btn"):
-    if st.button("<- Back to billing", key="checkout_back_billing"):
-        st.switch_page("pages/4_Billing.py")
+    st.page_link("pages/4_Billing.py", label="Back to billing")
 
 st.markdown(
     f"""

@@ -24,6 +24,9 @@ SQLITE_RETRY_BASE_SLEEP = 0.03
 SQLITE_RETRY_MAX_SLEEP = 0.35
 REMOTE_SYNC_TTL_SECONDS = 60
 _REMOTE_SYNC_CACHE: dict[str, float] = {}
+# Backoff cache for "account not found" remote responses (avoids noisy logs + repeated calls on reruns).
+REMOTE_NOT_FOUND_TTL_SECONDS = 10 * 60
+_REMOTE_NOT_FOUND_CACHE: dict[str, float] = {}
 BILLING_LOGGER = logging.getLogger("billing_store")
 _DB_SCHEMA_LOCK = threading.Lock()
 _DB_SCHEMA_READY = False
@@ -41,6 +44,8 @@ def _ensure_logger() -> None:
             logging.Formatter("%(asctime)s [billing_store] %(levelname)s: %(message)s")
         )
         BILLING_LOGGER.addHandler(handler)
+        # Avoid duplicated output via the root logger (Streamlit typically configures root handlers).
+        BILLING_LOGGER.propagate = False
     BILLING_LOGGER.setLevel(logging.DEBUG if _debug_enabled() else logging.INFO)
 
 
@@ -366,21 +371,26 @@ def get_account_by_email_local(email: str) -> dict[str, Any] | None:
     return _get_account_by_email_local(email)
 
 
-def _remote_sync_allowed(email: str) -> bool:
+def _remote_sync_allowed(email: str, *, force: bool = False) -> bool:
     if not email:
         return False
-    now = time.time()
-    last = _REMOTE_SYNC_CACHE.get(email)
-    if last is None:
+    if force:
         return True
-    return (now - last) >= REMOTE_SYNC_TTL_SECONDS
+    now = time.time()
+    last_success = _REMOTE_SYNC_CACHE.get(email)
+    if last_success is not None and (now - last_success) < REMOTE_SYNC_TTL_SECONDS:
+        return False
+    last_not_found = _REMOTE_NOT_FOUND_CACHE.get(email)
+    if last_not_found is not None and (now - last_not_found) < REMOTE_NOT_FOUND_TTL_SECONDS:
+        return False
+    return True
 
 
-def _fetch_remote_account(email: str) -> dict[str, Any] | None:
+def _fetch_remote_account(email: str) -> tuple[dict[str, Any] | None, str | None]:
     base_url = _get_secret("BILLING_API_URL")
     if not base_url:
         _log(logging.WARNING, "fetch_remote_account missing BILLING_API_URL")
-        return None
+        return None, "missing_base_url"
     token = _get_secret("BILLING_API_TOKEN")
     url = f"{base_url.rstrip('/')}/account?{urlencode({'email': email})}"
     headers = _remote_headers(token or None)
@@ -403,23 +413,33 @@ def _fetch_remote_account(email: str) -> dict[str, Any] | None:
         except Exception:
             detail = ""
         detail_preview = detail if len(detail) <= 2000 else f"{detail[:2000]}...(truncated)"
+        is_not_found = False
+        if err.code == 404:
+            try:
+                detail_payload = json.loads(detail or "{}")
+                is_not_found = (
+                    isinstance(detail_payload, dict)
+                    and (detail_payload.get("error") == "not_found" or detail_payload.get("code") == "not_found")
+                )
+            except Exception:
+                is_not_found = False
         _log(
-            logging.WARNING,
+            logging.DEBUG if is_not_found else logging.WARNING,
             f"fetch_remote_account http_error status={err.code} "
             f"token_present={bool(token)} body={detail_preview}",
         )
-        return None
+        return (None, "not_found") if is_not_found else (None, "http_error")
     except URLError as err:
         _log(logging.WARNING, f"fetch_remote_account url_error reason={getattr(err, 'reason', None)}")
-        return None
+        return None, "url_error"
     except Exception as err:
         _log(logging.WARNING, f"fetch_remote_account error={err}")
-        return None
+        return None, "error"
     if not isinstance(payload, dict) or not payload.get("ok"):
         _log(logging.WARNING, f"fetch_remote_account invalid_payload payload={payload}")
-        return None
+        return None, "invalid_payload"
     account = payload.get("account")
-    return account if isinstance(account, dict) else None
+    return (account, None) if isinstance(account, dict) else (None, "missing_account")
 
 
 def fetch_remote_transactions(
@@ -780,18 +800,24 @@ def sync_account_from_remote(email: str, force: bool = False) -> bool:
         f"force={force} db_path={_db_path()}",
         force=force,
     )
-    if not _remote_sync_allowed(email):
+    if not _remote_sync_allowed(email, force=force):
         _log_info(f"sync_account_from_remote skip_ttl email={email!r}", force=force)
         return False
 
     # Fetch remote first. Do NOT set TTL cache until we know the remote call succeeded.
-    remote = _fetch_remote_account(email)
+    remote, remote_err = _fetch_remote_account(email)
+    if remote_err == "not_found":
+        # Expected (e.g. dev env or user not provisioned yet): avoid noisy WARNINGs + repeated calls on reruns.
+        _REMOTE_NOT_FOUND_CACHE[email] = time.time()
+        _log(logging.DEBUG, f"sync_account_from_remote remote_not_found email={email!r} ttl={REMOTE_NOT_FOUND_TTL_SECONDS}s")
+        return False
     if not remote:
         _log_info(f"sync_account_from_remote remote_missing email={email!r}", force=force)
         return False
 
     # Only now record the TTL timestamp (prevents 60s lockout on transient failures).
     _REMOTE_SYNC_CACHE[email] = time.time()
+    _REMOTE_NOT_FOUND_CACHE.pop(email, None)
     local = _get_account_by_email_local(email)
     if not local:
         _log_info(f"sync_account_from_remote local_missing email={email!r} creating stub", force=force)
@@ -896,6 +922,7 @@ def force_sync_account_from_remote(email: str) -> bool:
     if not email:
         return False
     _REMOTE_SYNC_CACHE.pop(email, None)
+    _REMOTE_NOT_FOUND_CACHE.pop(email, None)
     return sync_account_from_remote(email, force=True)
 
 

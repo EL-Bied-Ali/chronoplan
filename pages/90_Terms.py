@@ -5,7 +5,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from projects_page.styles import inject_base_css
+from projects_page.styles import inject_base_css, inject_legal_css
 
 _icon_path = Path(__file__).resolve().parents[1] / "Chronoplan_ico.png"
 st.set_page_config(
@@ -14,13 +14,18 @@ st.set_page_config(
     layout="wide",
 )
 inject_base_css()
+inject_legal_css()
 
 EFFECTIVE_DATE = date(2026, 1, 29)
 SUPPORT_EMAIL = "chronoplan.app@gmail.com"
 OPERATOR_NAME = "Ali EL Bied"
 OPERATOR_LOCATION = "Brussels, Belgium"
 
-st.markdown(
+legal = st.container(key="legal_page")
+with legal.container(key="legal_back_btn"):
+    st.page_link("pages/4_Billing.py", label="Back to billing")
+
+legal.markdown(
     f"""
 # Terms of Service
 
@@ -100,8 +105,9 @@ Questions about these Terms: **{SUPPORT_EMAIL}**
     unsafe_allow_html=False,
 )
 
-st.divider()
-col_left, col_right = st.columns(2)
+footer = legal.container(key="legal_footer")
+footer.divider()
+col_left, col_right = footer.columns(2)
 with col_left:
     st.page_link("pages/91_Privacy.py", label="Privacy Policy")
 with col_right:

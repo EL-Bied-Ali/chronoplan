@@ -1,29 +1,45 @@
-# WBS Dashboard (Streamlit)
+# Chronoplan
 
-Streamlit dashboards to explore project progress data with S-curves, KPIs, and WBS details. The repo hosts the main dashboard plus a small WBS extractor UI.
+Chronoplan is a Streamlit application for planning and project control workflows.  
+It combines portfolio views, WBS exploration, schedule/progress tracking, and subscription-aware access control in one product.
 
-## Apps
-- Main dashboard: `streamlit run app.py` (uses bundled demo data; upload your Excel file to drive live charts).
-- WBS extractor UI: `streamlit run wbs_app/wbs_app.py` (kept separate so it can have its own layout/theme).
-- Quick smoke test: `streamlit run test_app.py` to confirm Streamlit/pandas/plotly install.
+## What this repository contains
+- Main app with routed pages for Home, Projects, Dashboard, WBS, S-curve, Billing, Checkout, and Admin tools.
+- Excel-driven project ingestion and KPI visualization.
+- Authentication flow (OIDC) with protected pages.
+- Billing lifecycle integration (Paddle checkout + webhook sync).
+- Optional Cloudflare R2 backups for operational artifacts.
 
-## Getting started
-1) Use Python 3.12 (see `runtime.txt`).
-2) Create a virtual env and install deps:
-   ```bash
-   python -m venv .venv
-   .venv\\Scripts\\activate
-   pip install -r requirements.txt
-   ```
-3) Run one of the apps above.
+## Tech stack
+- Python 3.12
+- Streamlit
+- Pandas + OpenPyXL/Calamine
+- Plotly
+- SQLite
+- Optional Cloudflare Worker for webhook handling
 
-## Data and settings
-- Upload an Excel progress file when prompted; column mappings live in `data.py` (`MAPPINGS` dict).
-- If you deploy the dashboard alongside the WBS UI, set `WBS_URL` (env var or Streamlit secret) so the cross-link points to the right host/port. The app defaults to `http://localhost:8502` when running locally.
+## Local setup
+1. Create and activate a virtual environment.
+2. Install dependencies.
+3. Start the app.
 
-## Auth (Streamlit OIDC)
-This app uses Streamlit's OIDC login (`st.login`, `st.user`). Configure secrets (or Streamlit Cloud secrets) like:
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run main.py
 ```
+
+Optional utilities:
+- WBS utility app: `streamlit run wbs_app/wbs_app.py`
+- Lightweight local webhook receiver: `python scripts/paddle_webhook_server.py`
+
+## Configuration
+
+### Authentication (OIDC)
+Set Streamlit secrets:
+
+```toml
 [auth]
 redirect_uri = "http://localhost:8501/oauth2callback"
 cookie_secret = "set-a-long-random-string"
@@ -31,59 +47,36 @@ client_id = "..."
 client_secret = "..."
 server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
 ```
-Notes:
-- The redirect URI must match exactly in Google Console, including `/oauth2callback`.
-- For Streamlit Cloud, use `https://your-app.streamlit.app/oauth2callback`.
-- `cookie_secret` must stay stable across restarts or all sessions are invalidated.
-- Optional: set `DEV_BYPASS=1` (env var or secret) to allow local bypass for dev-only testing.
 
-## Repo notes
-- `.gitignore` excludes virtualenvs, caches, Excel exports, and large videos so the repo stays light.
-- Everything else can be committed normally; keep the two apps independent so each retains its theme.
+### Billing/runtime keys
+Set as environment variables or Streamlit secrets:
+- `BILLING_API_URL`
+- `BILLING_API_TOKEN`
+- `APP_URL`
 
-## Paddle webhooks (billing sync)
-To keep `plan_status`/`plan_end` in sync after checkout, run the lightweight webhook server:
+If checkout is enabled in production:
+- `PADDLE_ENV=production`
+- `PADDLE_WEBHOOK_SECRET`
+- `PADDLE_CLIENT_TOKEN`
 
-```bash
-python scripts/paddle_webhook_server.py
-```
+### Backups (optional)
+To enable Cloudflare R2 backups:
+- `ENABLE_R2_BACKUPS=1`
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET`
+- Optional: `R2_ENDPOINT`, `R2_BACKUP_KEEP`
 
-Configure secrets (env vars or `.streamlit/secrets.toml`):
-```
-PADDLE_ENV = "sandbox"  # or "production"
-PADDLE_WEBHOOK_SECRET = "your-webhook-secret"
-PADDLE_WEBHOOK_PORT = "8001"
-PADDLE_WEBHOOK_PATH = "/webhook/paddle"
-```
+## Project layout
+- `main.py`: app entrypoint (routes to `pages/0_Router.py`)
+- `pages/`: Streamlit pages (projects, dashboard, WBS, S-curve, billing, checkout, legal)
+- `projects_page/`: UI components/styles/helpers for project views
+- `scripts/`: local operational scripts (including Paddle webhook server)
+- `workers/`: Cloudflare Worker webhook implementation
+- `artifacts/`: generated operational data and templates
 
-Notes:
-- If `PADDLE_ENV="production"`, the app expects `APP_URL` to be a public `https://...` URL (not localhost) and `PADDLE_WEBHOOK_SECRET` to be set.
-- The webhook server/worker will reject/stop in production if the webhook secret is missing.
-
-Then set the webhook URL in Paddle to:
-```
-http://YOUR_HOST:8001/webhook/paddle
-```
-
-The handler maps Paddle subscription events to:
-- `plan_status = active|trialing`
-- `plan_end` from the current billing period end date
-
-## R2 backups (artifacts)
-The app can create daily backups of billing and project artifacts in Cloudflare R2.
-
-Setup:
-1) Create an R2 bucket in your Cloudflare account (e.g. `chronoplan-backups`).
-2) Create an R2 API token with read/write access to that bucket.
-3) Set these secrets (Streamlit secrets or env vars):
-   - `R2_ACCOUNT_ID`
-   - `R2_ACCESS_KEY_ID`
-   - `R2_SECRET_ACCESS_KEY`
-   - `R2_BUCKET`
-   - `R2_ENDPOINT` (optional; defaults to `<account_id>.r2.cloudflarestorage.com`)
-   - `R2_BACKUP_KEEP` (optional; defaults to 14)
-   - `ENABLE_R2_BACKUPS` (optional; default 0)
-
-Behavior:
-- The Router page triggers a lazy daily backup if the last backup is older than 24h.
-- Admins can trigger a manual backup from the Billing page (Admin billing diagnostics).
+## Deployment notes
+- Works locally and on Streamlit Cloud.
+- Use HTTPS `APP_URL` in production.
+- Keep secrets out of git (`.streamlit/*` is ignored except page config).
