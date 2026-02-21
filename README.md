@@ -1,5 +1,5 @@
-# ChronoPlan AN
-ChronoPlan AN is a Streamlit-based project controls platform for planning and progress tracking teams.
+# ChronoPlan
+ChronoPlan is a Streamlit-based project controls platform for planning and progress tracking teams.
 
 It combines:
 - project-level workspace management
