@@ -1,7 +1,7 @@
 # LinkedIn Summary (Copy/Paste)
 
 ## Project
-ChronoPlan AN - Planning Analytics Platform
+ChronoPlan - Planning Analytics Platform
 
 ## One-liner
 Built a full Streamlit product for project controls teams: secure login, project workspaces, Excel-to-WBS ingestion, KPI/S-curve dashboards, and subscription-ready billing flows.

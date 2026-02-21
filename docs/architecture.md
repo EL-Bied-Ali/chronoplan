@@ -1,7 +1,7 @@
 # Architecture Overview
 
 ## Application model
-ChronoPlan AN is a Streamlit multi-page app with a service-layer style Python module layout.
+ChronoPlan is a Streamlit multi-page app with a service-layer style Python module layout.
 
 High-level flow:
 1. User authenticates with Google OAuth.
